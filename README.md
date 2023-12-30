@@ -23,11 +23,11 @@
 
 Talking points:
 - Iterators as a language construct? might be cool.
-- Constant VS mutable?
+- Constant VS mutable? Something like
 - How many keywords do we want? I like to keep them to a minimum.
 - Strict typing is a must, it simplifies stuff so much.
 Later...:
-- How will we tell the OS to run some program? maybe syntax like `!['test', 'param1', 'param2', var]`? it needs to be simple, easy to add... maybe `![test param1 param2 $var]`? The latter can just be syntax sugar for `exec(['test', 'param1', 'param2', var])`
+- How will we tell the OS to run some program? maybe syntax like `!['test', 'param1', 'param2', var]`? it needs to be simple, easy to add... maybe `![test param1 param2 $var]`? The latter can just be syntax sugar for `exec(['test', 'param1', 'param2', var])`:: DON'T WORRY ABOUT THIS YET
 
 -----
 
@@ -41,7 +41,7 @@ NOTES FOR FIRST RUN:
 >	WHILE and IF are only 2 control structures
 >
 >	"set" for constants, "let" for mutable vars
->	syntax like `set x:i16 = 123`
+>	syntax like `set x:i16 = 123` or `let y:i8 = 10`
 >	Might be too similar? need to crowd test this, see if it's too easy to confuse.
 >
 >	Don't worry about integers bigger than 1 byte, or non-integer types.
