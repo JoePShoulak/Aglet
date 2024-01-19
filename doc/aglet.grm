@@ -13,7 +13,7 @@ LBRACE: "{"
 RBRACE: "}"
 COMMA: ","
 COLON: ":"
-FUNC: "function"
+FUNC: "funk"
 ARROW: "->"
 
 #Syntax-wise, a valid program will consist of any list of statements
@@ -48,4 +48,4 @@ parameter-list  : (value (COMMA value)*)?
 function-decl: FUNC IDENTIFIER LPAREN parameter-decl-list RPAREN ARROW type-decl LBRACE statement* RBRACE
 parameter-decl-list: (parameter-decl (COMMA parameter-decl)*)?
 parameter-decl: IDENTIFIER COLON type-decl
-type-decl: IDENTIFIER #Technically can be ANY word, but at semantic stage, will be limited to valid types: "i8", "u8", "i16", "u16", "char", "int", etc
+type-decl: IDENTIFIER #Technically can be ANY word, but at semantic stage, will be limited to valid types: "char", "int", "void"

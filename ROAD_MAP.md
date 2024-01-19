@@ -1,3 +1,14 @@
+### Current Task List
+
+- Function signatures like `funk fib(n: int) -> int { ... }`
+- No significant whitespace
+- requiring statements to end in a semicolon is OKAY (see if we can avoid it though?)
+- Entry point will be `main` function: `funk main() -> void { ... }`
+- Valid types: `int`(signed 16 bit), `char` (unsigned 8 bit), `void` (function doesn't return a value)
+- Possibly support for fixed-length arrays? we'll see. Not high priority.
+  - If so, keep in mind that arrays will need some way to have the length checked...
+
+
 ### Basic Road Map (will change)
 
 - Don't worry about objects yet.
@@ -26,6 +37,8 @@ Talking points:
 - Strict typing is a must, it simplifies stuff so much.
 Later...:
 - How will we tell the OS to run some program? maybe syntax like `!['test', 'param1', 'param2', var]`? it needs to be simple, easy to add... maybe `![test param1 param2 $var]`? The latter can just be syntax sugar for `exec(['test', 'param1', 'param2', var])`:: DON'T WORRY ABOUT THIS YET
+
+- In the future, maybe allow dot notation for function calls? e.g. `foo.bar(baz)` is just syntax sugar for `bar(foo, baz)`... something to think about.
 
 -----
 
