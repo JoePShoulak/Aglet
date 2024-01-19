@@ -1,0 +1,47 @@
+IDENTIFIER: [a-zA-Z_]\w*
+INTEGER: [0-9]+
+
+PLUS: "+"
+MINUS: "-"
+MULT: "*"
+DIV: "/"
+MOD: "%"
+
+LPAREN: "("
+RPAREN: ")"
+LBRACE: "{"
+RBRACE: "}"
+COMMA: ","
+FUNC: "function"
+
+#Syntax-wise, a valid program will consist of any list of statements
+all: statement*
+
+statement	: expression
+			| function-decl
+
+expression: add-expr
+
+add-expr	: multiply-expr PLUS multiply-expr
+			| multiply-expr MINUS multiply-expr
+			| multiply-expr
+
+multiply-expr	: value MULT value
+				| value DIV value
+				| value MOD value
+				| value
+
+paren-expr : LPAREN expression RPAREN
+
+value	: IDENTIFIER
+		| INTEGER
+		| paren-expr
+		| function-call
+
+#Function calls
+function-call	: IDENTIFIER LPAREN parameter-list RPAREN
+parameter-list	: (value (COMMA value)*)?
+
+#Function declarations
+function-decl	: FUNC IDENTIFIER LPAREN parameter-decl RPAREN LBRACE statement* RBRACE
+parameter-decl	: (IDENTIFIER (COMMA IDENTIFIER)*)?
