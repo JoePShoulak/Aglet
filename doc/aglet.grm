@@ -13,8 +13,14 @@ LBRACE: "{"
 RBRACE: "}"
 COMMA: ","
 COLON: ":"
-FUNC: "funk"
 ARROW: "->"
+
+FUNC: "funk"
+SET: "set"
+LET: "let"
+IF: "if"
+ELSE: "else"
+RETURN: "return"
 
 #Syntax-wise, a valid program will consist of any list of statements
 all: statement*
