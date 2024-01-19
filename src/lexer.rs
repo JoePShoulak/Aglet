@@ -10,6 +10,9 @@ pub enum Token {
 	KwdFunction,
 	KwdConstant,
 	KwdMutable,
+	KwdReturn,
+	KwdIf,
+	KwdElse,
 
 	//Values
 	Identifier(String),
@@ -32,6 +35,12 @@ pub enum Token {
 	OperDiv,
 	OperMod,
 	OperAssign,
+	OperLessThan,
+	OperLessOrEqual,
+	OperGreaterThan,
+	OperGreaterOrEqual,
+	OperEqual,
+	OperNotEqual,
 }
 
 lexer! {
@@ -46,6 +55,9 @@ lexer! {
 	"funk" => Token::KwdFunction,
 	"set" => Token::KwdConstant,
 	"let" => Token::KwdMutable,
+	"return" => Token::KwdReturn,
+	"if" => Token::KwdIf,
+	"else" => Token::KwdElse,
 
 	//Values
 	"[a-zA-Z_][a-zA-Z_0-9]*" => Token::Identifier(text.to_owned()),
@@ -68,6 +80,12 @@ lexer! {
 	"/" => Token::OperDiv,
 	"%" => Token::OperMod,
 	"=" => Token::OperAssign,
+	"<" => Token::OperLessThan,
+	"<=" => Token::OperLessOrEqual,
+	">" => Token::OperGreaterThan,
+	">=" => Token::OperGreaterOrEqual,
+	"==" => Token::OperEqual,
+	"!=" => Token::OperNotEqual,
 
 	//If none of the above, raise an error!
 	"." => panic!("Unexpected character \"{}\"", text),
