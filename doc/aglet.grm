@@ -17,31 +17,31 @@ FUNC: "function"
 #Syntax-wise, a valid program will consist of any list of statements
 all: statement*
 
-statement	: expression
-			| function-decl
+statement   : expression
+            | function-decl
 
 expression: add-expr
 
-add-expr	: multiply-expr PLUS multiply-expr
-			| multiply-expr MINUS multiply-expr
-			| multiply-expr
+add-expr    : multiply-expr PLUS multiply-expr
+            | multiply-expr MINUS multiply-expr
+            | multiply-expr
 
-multiply-expr	: value MULT value
-				| value DIV value
-				| value MOD value
-				| value
+multiply-expr   : value MULT value
+                | value DIV value
+                | value MOD value
+                | value
 
 paren-expr : LPAREN expression RPAREN
 
-value	: IDENTIFIER
-		| INTEGER
-		| paren-expr
-		| function-call
+value   : IDENTIFIER
+        | INTEGER
+        | paren-expr
+        | function-call
 
 #Function calls
-function-call	: IDENTIFIER LPAREN parameter-list RPAREN
-parameter-list	: (value (COMMA value)*)?
+function-call   : IDENTIFIER LPAREN parameter-list RPAREN
+parameter-list  : (value (COMMA value)*)?
 
 #Function declarations
-function-decl	: FUNC IDENTIFIER LPAREN parameter-decl RPAREN LBRACE statement* RBRACE
-parameter-decl	: (IDENTIFIER (COMMA IDENTIFIER)*)?
+function-decl   : FUNC IDENTIFIER LPAREN parameter-decl RPAREN LBRACE statement* RBRACE
+parameter-decl  : (IDENTIFIER (COMMA IDENTIFIER)*)?
