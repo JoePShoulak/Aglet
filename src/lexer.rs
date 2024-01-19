@@ -2,18 +2,74 @@ use plex::lexer;
 
 #[derive(Debug, Clone)]
 pub enum Token {
+	//Ignored Tokens
+	Whitespace,
+	Comment,
+
+	//Keywords
+	KwdFunction,
+	KwdConstant,
+	KwdMutable,
+
+	//Values
 	Identifier(String),
 	Integer(i64),
 
-	Whitespace,
+	//Language Structures
+	LParen,
+	RParen,
+	LBrace,
+	RBrace,
+	Colon,
+	Comma,
+	Arrow,
+	Semicolon,
+
+	//Operators
+	OperPlus,
+	OperMinus,
+	OperMult,
+	OperDiv,
+	OperMod,
+	OperAssign,
 }
 
 lexer! {
 	fn next_token(text: 'a) -> Token;
 
+	//Ignored Tokens
 	r"[ \t\r\n]" => Token::Whitespace,
-	r"[0-9]+" => Token::Integer(text.parse().unwrap()),
-	r"[a-zA-Z_][a-zA-Z_0-9]*" => Token::Identifier(text.to_owned()),
+	"/[*](~(.*[*]/.*))[*]/" => Token::Comment, // "C-style" comments (/* .. */) - can't contain "*/"
+	r"//[^\n]*" => Token::Comment, // "C++-style" comments (// ...)
+
+	//Keywords
+	"funk" => Token::KwdFunction,
+	"set" => Token::KwdConstant,
+	"let" => Token::KwdMutable,
+
+	//Values
+	"[a-zA-Z_][a-zA-Z_0-9]*" => Token::Identifier(text.to_owned()),
+	"[0-9]+" => Token::Integer(text.parse().unwrap()),
+
+	//Language Structures
+	"\\(" => Token::LParen,
+	"\\)" => Token::RParen,
+	"\\{" => Token::LBrace,
+	"\\}" => Token::RBrace,
+	":" => Token::Colon,
+	"," => Token::Comma,
+	"->" => Token::Arrow,
+	";" => Token::Semicolon,
+
+	//Operators
+	"\\+" => Token::OperPlus,
+	"-" => Token::OperMinus,
+	"\\*" => Token::OperMult,
+	"/" => Token::OperDiv,
+	"%" => Token::OperMod,
+	"=" => Token::OperAssign,
+
+	//If none of the above, raise an error!
 	"." => panic!("Unexpected character \"{}\"", text),
 }
 
@@ -51,7 +107,7 @@ impl<'a> Iterator for Lexer<'a> {
 			};
 
 			match tok {
-				Token::Whitespace => {
+				Token::Whitespace | Token::Comment => {
 					continue;
 				}
 
