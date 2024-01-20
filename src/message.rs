@@ -36,7 +36,7 @@ pub fn eof_error(filename: Option<String>, full_text: &String, text: String) {
 		None => {
 			eprintln!("  {} stdin:{}", "-->".bright_blue().bold(), line_no);
 		},
-		s => {
+		Some(s) => {
 			eprintln!("  {} {:?}:{}", "-->".bright_blue().bold(), s, line_no);
 		}
 	}
@@ -99,8 +99,8 @@ fn print_context(filename: &Option<String>, full_text: &String, span: Span) {
 		None => {
 			eprintln!("  {} stdin:{}:{}", "-->".bright_blue().bold(), line_no, col_no);
 		},
-		s => {
-			eprintln!("  {} {:?}:{}:{}", "-->".bright_blue().bold(), s, line_no, col_no);
+		Some(s) => {
+			eprintln!("  {} {}:{}:{}", "-->".bright_blue().bold(), s, line_no, col_no);
 		}
 	}
 

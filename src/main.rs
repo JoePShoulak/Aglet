@@ -1,15 +1,35 @@
 use std::io::Read;
 use std::process::ExitCode;
+use std::fs;
+use std::env;
 
 mod lexer;
 mod parser;
 pub mod message;
 
 fn main() -> ExitCode {
-	//Read program text from stdin.
-	//Consider handling possible error so pgm doesn't panic?
 	let mut s = String::new();
-	std::io::stdin().read_to_string(&mut s).unwrap();
+	let mut filename: Option<String> = None;
+
+	//If an argument is given, assume that's the input file.
+	//Otherwise, read program text from stdin.
+	let args: Vec<String> = env::args().collect();
+
+	match args.get(1) {
+		None => {
+			std::io::stdin().read_to_string(&mut s).unwrap();
+		},
+		Some(fname) => {
+			s = match fs::read_to_string(fname) {
+				Ok(file_contents) => file_contents,
+				Err(error) => {
+					eprintln!("Error reading file: {}", error);
+					return ExitCode::FAILURE;
+				}
+			};
+			filename = Some(fname.to_string());
+		},
+	}
 
 	//Create lexer (iterator), with debug info for each token read
 	let lexer = lexer::Lexer::new(&s);//.inspect(|tok| eprintln!("tok: {:?}", tok));
@@ -35,7 +55,7 @@ fn main() -> ExitCode {
 	};
 
 	if message::errored() {
-		message::print_all(s, None);
+		message::print_all(s, filename);
 		return ExitCode::FAILURE;
 	}
 
