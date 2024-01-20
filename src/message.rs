@@ -70,16 +70,16 @@ pub fn errored() -> bool {
 fn print_context(filename: &Option<String>, full_text: &String, span: Span) {
 	let before = &full_text[0..span.lo];
 	let after = &full_text[span.hi..full_text.len()];
-	let line_begin = {
-		let mut ix = 0;
+	let line_begin = (1 + {
+		let mut ix = -1;
 		for (index, c) in before.char_indices().rev() {
 			if c == '\n' {
-				ix = index;
+				ix = index as isize;
 				break;
 			}
 		}
 		ix
-	} + 1;
+	}) as usize;
 	let line_end = span.hi + {
 		let mut ix = 0;
 		for (index, c) in after.char_indices() {
@@ -89,7 +89,7 @@ fn print_context(filename: &Option<String>, full_text: &String, span: Span) {
 			}
 		}
 		ix
-	};
+	} - 1;
 
 	let line_no = before.chars().filter(|&c| c == '\n').count() + 1;
 	let col_no = span.lo - line_begin;
@@ -106,7 +106,7 @@ fn print_context(filename: &Option<String>, full_text: &String, span: Span) {
 
 	//Print the line in question and highlight what element is being referred to.
 	eprintln!("   {}", "|".bright_blue().bold());
-	eprintln!("{:<3}{} {}", format!("{}", line_no).bright_blue().bold(), "|".bright_blue().bold(), &full_text[line_begin .. line_end]);
+	eprintln!("{:<3}{} {}", format!("{}", line_no).bright_blue().bold(), "|".bright_blue().bold(), &full_text[line_begin ..= line_end]);
 	eprintln!("   {} {}{}", "|".bright_blue().bold(), " ".repeat(span.lo - line_begin), "^".repeat(span.hi - span.lo).bright_blue().bold());
 }
 
