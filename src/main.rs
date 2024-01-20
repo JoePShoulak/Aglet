@@ -2,6 +2,7 @@ use std::io::Read;
 use std::process::ExitCode;
 
 mod lexer;
+pub mod parser;
 
 fn main() -> ExitCode {
 	//Read program text from stdin.
@@ -14,7 +15,7 @@ fn main() -> ExitCode {
 
 	//Read input, splitting into tokens as it's read.
 	//Note: This can panic! Consider handling it so program can exit gracefully.
-	for _ in lexer {}
+	let _ast = parser::parse(lexer).unwrap();
 
 	return ExitCode::SUCCESS;
 }
