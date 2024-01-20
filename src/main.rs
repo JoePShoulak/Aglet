@@ -42,7 +42,7 @@ fn main() -> ExitCode {
 			match e.0 {
 				None => {
 					//We hit EOF
-					message::eof_error(None, &s, format!("{}", e.1));
+					message::eof_error(&filename, &s, format!("{}", e.1));
 				},
 				Some(s) => {
 					message::error(format!("{}", e.1), s.1);
@@ -55,7 +55,7 @@ fn main() -> ExitCode {
 	};
 
 	if message::errored() {
-		message::print_all(s, filename);
+		message::print_all(s, &filename);
 		return ExitCode::FAILURE;
 	}
 

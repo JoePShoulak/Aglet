@@ -27,7 +27,7 @@ pub fn error(text: String, span: Span) {
 	*data = true;
 }
 
-pub fn eof_error(filename: Option<String>, full_text: &String, text: String) {
+pub fn eof_error(filename: &Option<String>, full_text: &String, text: String) {
 	let line_no = full_text.chars().filter(|&c| c == '\n').count() + 1;
 
 	//Print filename, line number and column number.
@@ -37,7 +37,7 @@ pub fn eof_error(filename: Option<String>, full_text: &String, text: String) {
 			eprintln!("  {} stdin:{}", "-->".bright_blue().bold(), line_no);
 		},
 		Some(s) => {
-			eprintln!("  {} {:?}:{}", "-->".bright_blue().bold(), s, line_no);
+			eprintln!("  {} {}:{}", "-->".bright_blue().bold(), s, line_no);
 		}
 	}
 	eprintln!("   {} {}", "|".bright_blue().bold(), "(EOF)".bright_blue().bold());
@@ -110,7 +110,7 @@ fn print_context(filename: &Option<String>, full_text: &String, span: Span) {
 	eprintln!("   {} {}{}", "|".bright_blue().bold(), " ".repeat(span.lo - line_begin), "^".repeat(span.hi - span.lo).bright_blue().bold());
 }
 
-pub fn print_all(full_text: String, filename: Option<String>) {
+pub fn print_all(full_text: String, filename: &Option<String>) {
 	let msgs = MESSAGES.lock().unwrap();
 
 	for message in msgs.iter() {
