@@ -6,7 +6,6 @@ pub enum MessageKind {
 	Error,
 	Warning,
 	Hint,
-	Info,
 }
 
 pub struct Message {
@@ -28,6 +27,25 @@ pub fn error(text: String, span: Span) {
 	*data = true;
 }
 
+pub fn eof_error(filename: Option<String>, full_text: &String, text: String) {
+	let line_no = full_text.chars().filter(|&c| c == '\n').count() + 1;
+
+	//Print filename, line number and column number.
+	eprintln!("{}: {}", "error".red().bold(), text.bold());
+	match filename {
+		None => {
+			eprintln!("  {} stdin:{}", "-->".bright_blue().bold(), line_no);
+		},
+		s => {
+			eprintln!("  {} {:?}:{}", "-->".bright_blue().bold(), s, line_no);
+		}
+	}
+	eprintln!("   {} {}", "|".bright_blue().bold(), "(EOF)".bright_blue().bold());
+
+	let mut data = DID_ERROR.lock().unwrap();
+	*data = true;
+}
+
 pub fn warn(text: String, span: Span) {
 	let mut msgs = MESSAGES.lock().unwrap();
 	let msg: Message = Message { kind: MessageKind::Warning, text: text, span: span };
@@ -40,10 +58,9 @@ pub fn hint(text: String, span: Span) {
 	msgs.push(msg);
 }
 
-pub fn info(text: String, span: Span) {
-	let mut msgs = MESSAGES.lock().unwrap();
-	let msg: Message = Message { kind: MessageKind::Info, text: text, span: span };
-	msgs.push(msg);
+//Unlike the other message types, info messages print immediately.
+pub fn info(text: &str) {
+	eprintln!("{}: {}", "info".bold(), text);
 }
 
 pub fn errored() -> bool {
@@ -111,10 +128,6 @@ pub fn print_all(full_text: String, filename: Option<String>) {
 			MessageKind::Hint => {
 				eprintln!("{}: {}", "hint".bright_blue().bold(), message.text);
 			},
-
-			MessageKind::Info => {
-				eprintln!("{}", message.text);
-			}
 		};
 	}
 }
