@@ -1,10 +1,12 @@
 use plex::lexer;
+use crate::message;
 
 #[derive(Debug, Clone)]
 pub enum Token {
 	//Ignored Tokens
 	Whitespace,
 	Comment,
+	Unknown(String),
 
 	//Keywords
 	KwdFunction,
@@ -88,7 +90,7 @@ lexer! {
 	"!=" => Token::OperNotEqual,
 
 	//If none of the above, raise an error!
-	"." => panic!("Unexpected character \"{}\"", text),
+	"." => Token::Unknown(text.to_owned()),
 }
 
 pub struct Lexer<'a> {
@@ -126,6 +128,11 @@ impl<'a> Iterator for Lexer<'a> {
 
 			match tok {
 				Token::Whitespace | Token::Comment => {
+					continue;
+				}
+
+				Token::Unknown(text) => {
+					message::error(format!("unexpected character `{}`", text), span);
 					continue;
 				}
 
