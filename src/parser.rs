@@ -3,7 +3,19 @@ pub mod ast {
 
 	#[derive(Debug)]
 	pub struct Program {
-		pub stmts: Vec<Expression>,
+		pub stmts: Vec<Statement>,
+	}
+
+	#[derive(Debug)]
+	pub struct Statement {
+		pub span: Span,
+		pub node: Stmt,
+	}
+
+	#[derive(Debug)]
+	pub enum Stmt {
+		ExprStmt(Box<Expr>),
+		FuncDecl(Box<String>, Box<Vec<Param>>, Box<String>, Box<Program>),
 	}
 
 	#[derive(Debug)]
@@ -31,6 +43,25 @@ pub mod ast {
 
 		Var(String),
 		Literal(i64),
+		FuncCall(Box<Expression>, Box<Vec<Expression>>),
+		Null,
+	}
+
+	#[derive(Debug)]
+	pub struct ParamList {
+		pub params: Vec<Expression>,
+	}
+
+	#[derive(Debug)]
+	pub struct ParamDeclList {
+		pub params: Vec<Param>,
+	}
+
+	#[derive(Debug)]
+	pub struct Param {
+		pub span: Span,
+		pub name: String,
+		pub datatype: String,
 	}
 }
 
@@ -54,11 +85,54 @@ parser! {
 		statements[s] => Program { stmts: s }
 	}
 
-	statements: Vec<Expression> {
+	statements: Vec<Statement> {
 		=> vec![],
-		statements[mut st] compare[e] Semicolon =>  {
+		statements[mut st] statement[e] => {
 			st.push(e);
 			st
+		}
+	}
+
+	statement: Statement {
+		compare[e] Semicolon => Statement {
+			span: span!(),
+			node: Stmt::ExprStmt(Box::new(e.node)),
+		},
+
+		KwdFunction Identifier(name) LParen RParen Arrow Identifier(return_type) LBrace program[p] RBrace => Statement {
+			span: span!(),
+			node: Stmt::FuncDecl(Box::new(name), Box::new(vec![]), Box::new(return_type), Box::new(p)),
+		},
+
+		KwdFunction Identifier(name) LParen param_decl_list[params] RParen Arrow Identifier(return_type) LBrace program[p] RBrace => Statement {
+			span: span!(),
+			node: Stmt::FuncDecl(Box::new(name), Box::new(params), Box::new(return_type), Box::new(p)),
+		},
+
+		KwdReturn compare[e] Semicolon => Statement {
+			span: span!(),
+			node: Stmt::ExprStmt(Box::new(e.node)),
+		},
+
+		KwdReturn Semicolon => Statement {
+			span: span!(),
+			node: Stmt::ExprStmt(Box::new(Expr::Null)),
+		},
+	}
+
+	param_decl_list: Vec<Param> {
+		param_decl_list[mut lhs] Comma param_decl[rhs] => {
+			lhs.push(rhs);
+			lhs
+		},
+		param_decl[a] => vec![a],
+	}
+
+	param_decl: Param {
+		Identifier(name) Colon Identifier(datatype) => Param {
+			span: span!(),
+			name: name,
+			datatype: datatype,
 		}
 	}
 
@@ -134,7 +208,25 @@ parser! {
 			node: Expr::Literal(i),
 		},
 
-		LParen term[a] RParen => a,
+		atom[lhs] LParen param_list[rhs] RParen => Expression {
+			span: span!(),
+			node: Expr::FuncCall(Box::new(lhs), Box::new(rhs)),
+		},
+
+		atom[lhs] LParen RParen => Expression {
+			span: span!(),
+			node: Expr::FuncCall(Box::new(lhs), Box::new(vec![])),
+		},
+
+		LParen compare[a] RParen => a,
+	}
+
+	param_list: Vec<Expression> {
+		param_list[mut lhs] Comma compare[rhs] => {
+			lhs.push(rhs);
+			lhs
+		},
+		compare[a] => vec![a],
 	}
 }
 

@@ -31,6 +31,8 @@ fn main() -> ExitCode {
 		},
 	}
 
+	s = s.replace("\t", " "); //For formatting reasons, replace all tabs with spaces.
+
 	//Create lexer (iterator), with debug info for each token read
 	let lexer = lexer::Lexer::new(&s);//.inspect(|tok| eprintln!("tok: {:?}", tok));
 

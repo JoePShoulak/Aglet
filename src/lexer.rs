@@ -68,7 +68,7 @@ lexer! {
 	"funk" => Token::KwdFunction,
 	"set" => Token::KwdConstant,
 	"let" => Token::KwdMutable,
-	"return" => Token::KwdReturn,
+	"ret" => Token::KwdReturn,
 	"if" => Token::KwdIf,
 	"else" => Token::KwdElse,
 	"true" => Token::True,
