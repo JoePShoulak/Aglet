@@ -15,6 +15,14 @@ pub enum Token {
 	KwdReturn,
 	KwdIf,
 	KwdElse,
+	True,
+	False,
+
+	//Keyword operators
+	OperOr,
+	OperAnd,
+	OperXor,
+	OperNot,
 
 	//Values
 	Identifier(String),
@@ -25,10 +33,13 @@ pub enum Token {
 	RParen,
 	LBrace,
 	RBrace,
+	LBracket,
+	RBracket,
 	Colon,
 	Comma,
 	Arrow,
 	Semicolon,
+	Dot,
 
 	//Operators
 	OperPlus,
@@ -60,6 +71,14 @@ lexer! {
 	"return" => Token::KwdReturn,
 	"if" => Token::KwdIf,
 	"else" => Token::KwdElse,
+	"true" => Token::True,
+	"false" => Token::False,
+
+	//Keyword operators
+	"or" => Token::OperOr,
+	"and" => Token::OperAnd,
+	"xor" => Token::OperXor,
+	"not" => Token::OperNot,
 
 	//Values
 	"[a-zA-Z_][a-zA-Z_0-9]*" => Token::Identifier(text.to_owned()),
@@ -70,10 +89,13 @@ lexer! {
 	"\\)" => Token::RParen,
 	"\\{" => Token::LBrace,
 	"\\}" => Token::RBrace,
+	"\\[" => Token::LBracket,
+	"\\]" => Token::RBracket,
 	":" => Token::Colon,
 	"," => Token::Comma,
 	"->" => Token::Arrow,
 	";" => Token::Semicolon,
+	"\\." => Token::Dot,
 
 	//Operators
 	"\\+" => Token::OperPlus,

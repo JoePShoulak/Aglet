@@ -9,13 +9,26 @@ pub mod ast {
 	#[derive(Debug)]
 	pub struct Expression {
 		pub span: Span,
-		pub node: Expr_,
+		pub node: Expr,
 	}
 
 	#[derive(Debug)]
-	pub enum Expr_ {
+	pub enum Expr {
+		//Arithmetic
 		Add(Box<Expression>, Box<Expression>),
 		Sub(Box<Expression>, Box<Expression>),
+		Mult(Box<Expression>, Box<Expression>),
+		Div(Box<Expression>, Box<Expression>),
+		Mod(Box<Expression>, Box<Expression>),
+
+		//Boolean comparison
+		LessThan(Box<Expression>, Box<Expression>),
+		LessOrEqual(Box<Expression>, Box<Expression>),
+		GreaterThan(Box<Expression>, Box<Expression>),
+		GreaterOrEqual(Box<Expression>, Box<Expression>),
+		Equal(Box<Expression>, Box<Expression>),
+		NotEqual(Box<Expression>, Box<Expression>),
+
 		Var(String),
 		Literal(i64),
 	}
@@ -43,21 +56,68 @@ parser! {
 
 	statements: Vec<Expression> {
 		=> vec![],
-		statements[mut st] term[e] Semicolon =>  {
+		statements[mut st] compare[e] Semicolon =>  {
 			st.push(e);
 			st
 		}
 	}
 
-	//AST rules for creating addition token.
-	term: Expression {
-		term[lhs] OperPlus atom[rhs] => Expression {
+	//Boolean comparison (lower precedence than addition)
+	compare: Expression {
+		compare[lhs] OperLessThan term[rhs] => Expression {
 			span: span!(),
-			node: Expr_::Add(Box::new(lhs), Box::new(rhs)),
+			node: Expr::LessThan(Box::new(lhs), Box::new(rhs)),
 		},
-		term[lhs] OperMinus atom[rhs] => Expression {
+		compare[lhs] OperLessOrEqual term[rhs] => Expression {
 			span: span!(),
-			node: Expr_::Sub(Box::new(lhs), Box::new(rhs)),
+			node: Expr::LessOrEqual(Box::new(lhs), Box::new(rhs)),
+		},
+		compare[lhs] OperGreaterThan term[rhs] => Expression {
+			span: span!(),
+			node: Expr::GreaterThan(Box::new(lhs), Box::new(rhs)),
+		},
+		compare[lhs] OperGreaterOrEqual term[rhs] => Expression {
+			span: span!(),
+			node: Expr::GreaterOrEqual(Box::new(lhs), Box::new(rhs)),
+		},
+		compare[lhs] OperEqual term[rhs] => Expression {
+			span: span!(),
+			node: Expr::Equal(Box::new(lhs), Box::new(rhs)),
+		},
+		compare[lhs] OperNotEqual term[rhs] => Expression {
+			span: span!(),
+			node: Expr::NotEqual(Box::new(lhs), Box::new(rhs)),
+		},
+		term[x] => x,
+	}
+
+
+	//Addition (lower precedence than multiplication)
+	term: Expression {
+		term[lhs] OperPlus factor[rhs] => Expression {
+			span: span!(),
+			node: Expr::Add(Box::new(lhs), Box::new(rhs)),
+		},
+		term[lhs] OperMinus factor[rhs] => Expression {
+			span: span!(),
+			node: Expr::Sub(Box::new(lhs), Box::new(rhs)),
+		},
+		factor[x] => x,
+	}
+
+	//Multiplication
+	factor: Expression {
+		factor[lhs] OperMult atom[rhs] => Expression {
+			span: span!(),
+			node: Expr::Mult(Box::new(lhs), Box::new(rhs)),
+		},
+		factor[lhs] OperDiv atom[rhs] => Expression {
+			span: span!(),
+			node: Expr::Div(Box::new(lhs), Box::new(rhs)),
+		},
+		factor[lhs] OperMod atom[rhs] => Expression {
+			span: span!(),
+			node: Expr::Mod(Box::new(lhs), Box::new(rhs)),
 		},
 		atom[x] => x,
 	}
@@ -66,12 +126,12 @@ parser! {
 	atom: Expression {
 		Identifier(i) => Expression {
 			span: span!(),
-			node: Expr_::Var(i),
+			node: Expr::Var(i),
 		},
 
 		Integer(i) => Expression {
 			span: span!(),
-			node: Expr_::Literal(i),
+			node: Expr::Literal(i),
 		},
 
 		LParen term[a] RParen => a,
