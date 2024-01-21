@@ -27,6 +27,7 @@ pub mod ast {
 	#[derive(Debug)]
 	pub enum Expr {
 		//Arithmetic
+		Neg(Box<Expression>),
 		Add(Box<Expression>, Box<Expression>),
 		Sub(Box<Expression>, Box<Expression>),
 		Mult(Box<Expression>, Box<Expression>),
@@ -193,6 +194,12 @@ parser! {
 			span: span!(),
 			node: Expr::Mod(Box::new(lhs), Box::new(rhs)),
 		},
+
+		OperMinus atom[e] => Expression {
+			span: span!(),
+			node: Expr::Neg(Box::new(e)),
+		},
+
 		atom[x] => x,
 	}
 
