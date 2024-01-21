@@ -16,6 +16,8 @@ pub mod ast {
 	pub enum Stmt {
 		ExprStmt(Box<Expr>),
 		FuncDecl(Box<String>, Box<Vec<Param>>, Box<String>, Box<Program>),
+		ReturnStmt(Box<Expr>),
+		IfStmt(Box<Expression>, Box<Program>, Box<Program>),
 	}
 
 	#[derive(Debug)]
@@ -112,12 +114,22 @@ parser! {
 
 		KwdReturn compare[e] Semicolon => Statement {
 			span: span!(),
-			node: Stmt::ExprStmt(Box::new(e.node)),
+			node: Stmt::ReturnStmt(Box::new(e.node)),
 		},
 
 		KwdReturn Semicolon => Statement {
 			span: span!(),
-			node: Stmt::ExprStmt(Box::new(Expr::Null)),
+			node: Stmt::ReturnStmt(Box::new(Expr::Null)),
+		},
+
+		KwdIf compare[e] LBrace program[p] RBrace KwdElse LBrace program[p2] RBrace => Statement {
+			span: span!(),
+			node: Stmt::IfStmt(Box::new(e), Box::new(p), Box::new(p2)),
+		},
+
+		KwdIf compare[e] LBrace program[p] RBrace => Statement {
+			span: span!(),
+			node: Stmt::IfStmt(Box::new(e), Box::new(p), Box::new(Program{stmts: vec![]})),
 		},
 	}
 
