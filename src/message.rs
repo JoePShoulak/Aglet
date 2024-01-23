@@ -3,6 +3,7 @@ use colored::Colorize;
 use crate::lexer::Span;
 
 pub enum MessageKind {
+	Abort,
 	Error,
 	Warning,
 	Hint,
@@ -17,6 +18,12 @@ pub struct Message {
 //Thread safety. Not necessary yet but good practice.
 static DID_ERROR: Mutex<bool> = Mutex::new(false);
 static MESSAGES: Mutex<Vec<Message>> = Mutex::new(vec![]);
+
+pub fn abort() {
+	let mut msgs = MESSAGES.lock().unwrap();
+	let msg: Message = Message { kind: MessageKind::Abort, text: "Unable to continue due to previous errors".to_string(), span: Span{lo:0,hi:0} };
+	msgs.push(msg);
+}
 
 pub fn error(text: String, span: Span) {
 	let mut msgs = MESSAGES.lock().unwrap();
@@ -115,6 +122,10 @@ pub fn print_all(full_text: String, filename: &Option<String>) {
 
 	for message in msgs.iter() {
 		match message.kind {
+			MessageKind::Abort => {
+				eprintln!("{}: {}", "aborted".red().bold(), message.text.bold());
+			},
+
 			MessageKind::Error => {
 				eprintln!("{}: {}", "error".red().bold(), message.text.bold());
 				print_context(&filename, &full_text, message.span);

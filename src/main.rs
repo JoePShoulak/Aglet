@@ -57,6 +57,7 @@ fn main() -> ExitCode {
 	};
 
 	if message::errored() {
+		message::abort();
 		message::print_all(s, &filename);
 		return ExitCode::FAILURE;
 	}
