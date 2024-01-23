@@ -1,5 +1,6 @@
 pub mod ast {
 	use crate::lexer::Span;
+	use crate::lexer::Token;
 
 	#[derive(Debug)]
 	pub struct Program {
@@ -18,6 +19,7 @@ pub mod ast {
 		FuncDecl(Box<String>, Box<Vec<Param>>, Box<String>, Box<Program>),
 		ReturnStmt(Box<Expr>),
 		IfStmt(Box<Expression>, Box<Program>, Box<Program>),
+		VarDecl(Box<Vec<Token>>, Box<String>, Box<Option<String>>, Box<Expression>),
 	}
 
 	#[derive(Debug)]
@@ -43,6 +45,9 @@ pub mod ast {
 		GreaterOrEqual(Box<Expression>, Box<Expression>),
 		Equal(Box<Expression>, Box<Expression>),
 		NotEqual(Box<Expression>, Box<Expression>),
+
+		//Misc
+		Assign(Box<Expression>, Box<Expression>),
 
 		Var(String),
 		Literal(i64),
@@ -97,7 +102,7 @@ parser! {
 	}
 
 	statement: Statement {
-		compare[e] Semicolon => Statement {
+		assign[e] Semicolon => Statement {
 			span: span!(),
 			node: Stmt::ExprStmt(Box::new(e.node)),
 		},
@@ -112,7 +117,7 @@ parser! {
 			node: Stmt::FuncDecl(Box::new(name), Box::new(params), Box::new(return_type), Box::new(p)),
 		},
 
-		KwdReturn compare[e] Semicolon => Statement {
+		KwdReturn assign[e] Semicolon => Statement {
 			span: span!(),
 			node: Stmt::ReturnStmt(Box::new(e.node)),
 		},
@@ -122,15 +127,33 @@ parser! {
 			node: Stmt::ReturnStmt(Box::new(Expr::Null)),
 		},
 
-		KwdIf compare[e] LBrace program[p] RBrace KwdElse LBrace program[p2] RBrace => Statement {
+		KwdIf assign[e] LBrace program[p] RBrace KwdElse LBrace program[p2] RBrace => Statement {
 			span: span!(),
 			node: Stmt::IfStmt(Box::new(e), Box::new(p), Box::new(p2)),
 		},
 
-		KwdIf compare[e] LBrace program[p] RBrace => Statement {
+		KwdIf assign[e] LBrace program[p] RBrace => Statement {
 			span: span!(),
 			node: Stmt::IfStmt(Box::new(e), Box::new(p), Box::new(Program{stmts: vec![]})),
 		},
+
+		//Variable declaration without a specified type.
+		qualifiers[q] Identifier(name) OperAssign assign[e] Semicolon => Statement {
+			span: span!(),
+			node: Stmt::VarDecl(Box::new(q), Box::new(name), Box::new(None), Box::new(e)),
+		},
+
+		//Variable declaration WITH a specified type.
+		qualifiers[q] Identifier(name) Colon Identifier(typename) OperAssign assign[e] Semicolon => Statement {
+			span: span!(),
+			node: Stmt::VarDecl(Box::new(q), Box::new(name), Box::new(Some(typename)), Box::new(e)),
+		},
+	}
+
+	//Variable qualifiers are an array, just in case we want to allow multiple quals on var decls in the future.
+	qualifiers: Vec<Token> {
+		KwdConstant => vec![KwdConstant],
+		KwdMutable => vec![KwdMutable],
 	}
 
 	param_decl_list: Vec<Param> {
@@ -147,6 +170,15 @@ parser! {
 			name: name,
 			datatype: datatype,
 		}
+	}
+
+	//Assignment (lowest precedence)
+	assign: Expression {
+		assign[lhs] OperAssign compare[rhs] => Expression {
+			span: span!(),
+			node: Expr::Assign(Box::new(lhs), Box::new(rhs)),
+		},
+		compare[x] => x,
 	}
 
 	//Boolean comparison (lower precedence than addition)
@@ -237,15 +269,15 @@ parser! {
 			node: Expr::FuncCall(Box::new(lhs), Box::new(vec![])),
 		},
 
-		LParen compare[a] RParen => a,
+		LParen assign[a] RParen => a,
 	}
 
 	param_list: Vec<Expression> {
-		param_list[mut lhs] Comma compare[rhs] => {
+		param_list[mut lhs] Comma assign[rhs] => {
 			lhs.push(rhs);
 			lhs
 		},
-		compare[a] => vec![a],
+		assign[a] => vec![a],
 	}
 }
 
