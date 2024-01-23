@@ -2,7 +2,7 @@
 
 To build, run `cargo build`. Alternately, to build and run, `cargo run`.
 
-The only dependency is [Plex](https://github.com/goffrie/plex), for generating the parser.
+The only dependency is [Plex](https://github.com/goffrie/plex), for generating the parser. `cargo build` will automatically pull this in.
 
 ### TO DO:
 code style
