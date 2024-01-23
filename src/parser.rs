@@ -252,3 +252,20 @@ parser! {
 pub fn parse<I: Iterator<Item = (Token, Span)>>(i: I) -> Result<Program, (Option<(Token, Span)>, &'static str)> {
 	parse_(i)
 }
+
+use regex::Regex;
+use colored::Colorize;
+
+pub fn pretty(ast: Option<Program>) -> String {
+	let fluff = Regex::new(r"\n *[\)\}\]],?").unwrap();
+	let spans = Regex::new(r"\n *(lo|hi)").unwrap();
+	let other = Regex::new(r"(Literal\()\n *([^\n]+)").unwrap();
+
+	let text = format!("{:#?}", ast.unwrap()).replace("    ", "  ");
+
+	let s1 = fluff.replace_all(&text, "");
+	let s2 = spans.replace_all(&s1, " $1");
+	let s3 = other.replace_all(&s2, "$1 $2".bold().yellow().to_string());
+
+	return s3.to_string();
+}

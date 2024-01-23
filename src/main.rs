@@ -39,7 +39,7 @@ fn main() -> ExitCode {
 	message::info("Building AST...");
 
 	//Read input, splitting into tokens as it's read.
-	let _ast = match parser::parse(lexer) {
+	let ast = match parser::parse(lexer) {
 		Err(e) => {
 			match e.0 {
 				None => {
@@ -60,6 +60,8 @@ fn main() -> ExitCode {
 		message::print_all(s, &filename);
 		return ExitCode::FAILURE;
 	}
+
+	println!("{}", parser::pretty(ast));
 
 	message::info("Finished compilation.");
 	return ExitCode::SUCCESS;
