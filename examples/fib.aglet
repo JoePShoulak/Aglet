@@ -1,0 +1,12 @@
+funk fib(n: int) -> int {
+	if n < 2 {
+		ret n;
+	} else {
+		ret fib(n - 1) + fib(n - 2);
+	}
+}
+
+funk main() -> void {
+	let total: int = fib(5);
+	print(total);
+}

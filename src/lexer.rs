@@ -1,20 +1,118 @@
 use plex::lexer;
+use crate::message;
 
 #[derive(Debug, Clone)]
 pub enum Token {
+	//Ignored Tokens
+	Whitespace,
+	Comment,
+	Unknown(String),
+
+	//Keywords
+	KwdFunction,
+	KwdConstant,
+	KwdMutable,
+	KwdReturn,
+	KwdIf,
+	KwdElse,
+	True,
+	False,
+
+	//Keyword operators
+	OperOr,
+	OperAnd,
+	OperXor,
+	OperNot,
+
+	//Values
 	Identifier(String),
 	Integer(i64),
 
-	Whitespace,
+	//Language Structures
+	LParen,
+	RParen,
+	LBrace,
+	RBrace,
+	LBracket,
+	RBracket,
+	Colon,
+	Comma,
+	Arrow,
+	Semicolon,
+	Dot,
+
+	//Operators
+	OperPlus,
+	OperMinus,
+	OperMult,
+	OperDiv,
+	OperMod,
+	OperAssign,
+	OperLessThan,
+	OperLessOrEqual,
+	OperGreaterThan,
+	OperGreaterOrEqual,
+	OperEqual,
+	OperNotEqual,
 }
 
 lexer! {
 	fn next_token(text: 'a) -> Token;
 
+	//Ignored Tokens
 	r"[ \t\r\n]" => Token::Whitespace,
-	r"[0-9]+" => Token::Integer(text.parse().unwrap()),
-	r"[a-zA-Z_][a-zA-Z_0-9]*" => Token::Identifier(text.to_owned()),
-	"." => panic!("Unexpected character \"{}\"", text),
+	"/[*](~(.*[*]/.*))[*]/" => Token::Comment, // "C-style" comments (/* .. */) - can't contain "*/"
+	r"//[^\n]*" => Token::Comment, // "C++-style" comments (// ...)
+
+	//Keywords
+	"funk" => Token::KwdFunction,
+	"set" => Token::KwdConstant,
+	"let" => Token::KwdMutable,
+	"ret" => Token::KwdReturn,
+	"if" => Token::KwdIf,
+	"else" => Token::KwdElse,
+	"true" => Token::True,
+	"false" => Token::False,
+
+	//Keyword operators
+	"or" => Token::OperOr,
+	"and" => Token::OperAnd,
+	"xor" => Token::OperXor,
+	"not" => Token::OperNot,
+
+	//Values
+	"[a-zA-Z_][a-zA-Z_0-9]*" => Token::Identifier(text.to_owned()),
+	"[0-9]+" => Token::Integer(text.parse().unwrap()),
+
+	//Language Structures
+	"\\(" => Token::LParen,
+	"\\)" => Token::RParen,
+	"\\{" => Token::LBrace,
+	"\\}" => Token::RBrace,
+	"\\[" => Token::LBracket,
+	"\\]" => Token::RBracket,
+	":" => Token::Colon,
+	"," => Token::Comma,
+	"->" => Token::Arrow,
+	";" => Token::Semicolon,
+	"\\." => Token::Dot,
+
+	//Operators
+	"\\+" => Token::OperPlus,
+	"-" => Token::OperMinus,
+	"\\*" => Token::OperMult,
+	"/" => Token::OperDiv,
+	"%" => Token::OperMod,
+	"=" => Token::OperAssign,
+	"<" => Token::OperLessThan,
+	"<=" => Token::OperLessOrEqual,
+	">" => Token::OperGreaterThan,
+	">=" => Token::OperGreaterOrEqual,
+	"==" => Token::OperEqual,
+	"!=" => Token::OperNotEqual,
+
+	//If none of the above, raise an error!
+	"." => Token::Unknown(text.to_owned()),
 }
 
 pub struct Lexer<'a> {
@@ -51,7 +149,12 @@ impl<'a> Iterator for Lexer<'a> {
 			};
 
 			match tok {
-				Token::Whitespace => {
+				Token::Whitespace | Token::Comment => {
+					continue;
+				}
+
+				Token::Unknown(text) => {
+					message::error(format!("unexpected character `{}`", text), span);
 					continue;
 				}
 
