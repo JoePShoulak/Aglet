@@ -285,9 +285,9 @@ pub fn parse<I: Iterator<Item = (Token, Span)>>(i: I) -> Result<Program, (Option
 	parse_(i)
 }
 
-use regex::Regex;
-use colored::Colorize;
-
+#[cfg(debug_assertions)] use regex::Regex;
+#[cfg(debug_assertions)] use colored::Colorize;
+#[cfg(debug_assertions)]
 pub fn pretty(ast: Option<Program>) -> String {
 	let fluff = Regex::new(r"\n *[\)\}\]],?").unwrap();
 	let spans = Regex::new(r"\n *(lo|hi)").unwrap();

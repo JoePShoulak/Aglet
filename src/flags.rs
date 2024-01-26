@@ -5,6 +5,7 @@ use structopt::StructOpt;
 #[structopt(name = "Aglet Compiler", about = "A modern language for an old system;\nCompiles Aglet source to 6502 assembly.")]
 pub struct Options {
 	/// Prints the abstract syntax tree
+	#[cfg(debug_assertions)]
 	#[structopt(long)]
 	pub ast: bool,
 

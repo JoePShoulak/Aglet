@@ -50,6 +50,8 @@ fn main() -> ExitCode {
 		return ExitCode::FAILURE;
 	}
 
+	//--ast flag is only available in debug builds
+	#[cfg(debug_assertions)]
 	if options.ast {
 		println!("{}", parser::pretty(ast));
 	}
