@@ -1,35 +1,22 @@
-use std::io::Read;
 use std::process::ExitCode;
 use std::fs;
-use std::env;
 
 mod lexer;
 mod parser;
 pub mod message;
+mod flags;
 
 fn main() -> ExitCode {
-	let mut s = String::new();
-	let mut filename: Option<String> = None;
+	let options = flags::read();
 
-	//If an argument is given, assume that's the input file.
-	//Otherwise, read program text from stdin.
-	let args: Vec<String> = env::args().collect();
-
-	match args.get(1) {
-		None => {
-			std::io::stdin().read_to_string(&mut s).unwrap();
-		},
-		Some(fname) => {
-			s = match fs::read_to_string(fname) {
-				Ok(file_contents) => file_contents,
-				Err(error) => {
-					eprintln!("Error reading file: {}", error);
-					return ExitCode::FAILURE;
-				}
-			};
-			filename = Some(fname.to_string());
-		},
-	}
+	//Read input file
+	let mut s = match fs::read_to_string(&options.input) {
+		Ok(file_contents) => file_contents,
+		Err(error) => {
+			eprintln!("Error reading file {:?}: {}", options.input, error);
+			return ExitCode::FAILURE;
+		}
+	};
 
 	s = s.replace("\t", " "); //For formatting reasons, replace all tabs with spaces.
 
@@ -44,7 +31,7 @@ fn main() -> ExitCode {
 			match e.0 {
 				None => {
 					//We hit EOF
-					message::eof_error(&filename, &s, format!("{}", e.1));
+					message::eof_error(&Some(options.input.to_str().unwrap().to_string()), &s, format!("{}", e.1));
 				},
 				Some(s) => {
 					message::error(format!("{}", e.1), s.1);
@@ -58,11 +45,13 @@ fn main() -> ExitCode {
 
 	if message::errored() {
 		message::abort();
-		message::print_all(s, &filename);
+		message::print_all(s, &Some(options.input.to_str().unwrap().to_string()));
 		return ExitCode::FAILURE;
 	}
 
-	println!("{}", parser::pretty(ast));
+	if options.ast {
+		println!("{}", parser::pretty(ast));
+	}
 
 	message::info("Finished compilation.");
 	return ExitCode::SUCCESS;
