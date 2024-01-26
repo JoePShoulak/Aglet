@@ -21,20 +21,22 @@ fn main() -> ExitCode {
 	s = s.replace("\t", " "); //For formatting reasons, replace all tabs with spaces.
 
 	//Create lexer (iterator), with debug info for each token read
-	let lexer = lexer::Lexer::new(&s);//.inspect(|tok| eprintln!("tok: {:?}", tok));
+	let filename = options.input.to_str().unwrap().to_string();
+	let lexer = lexer::Lexer::new(message::Context { filename: &filename, source: &s });//.inspect(|tok| eprintln!("tok: {:?}", tok));
 
 	message::info("Building AST...");
 
 	//Read input, splitting into tokens as it's read.
+	let context = message::Context { filename: &filename, source: &s };
 	let ast = match parser::parse(lexer) {
 		Err(e) => {
 			match e.0 {
 				None => {
 					//We hit EOF
-					message::eof_error(&Some(options.input.to_str().unwrap().to_string()), &s, format!("{}", e.1));
+					message::error(format!("{}", "Unexpected end of file"), None, Some(&context));
 				},
 				Some(s) => {
-					message::error(format!("{}", e.1), s.1);
+					message::error(format!("{}", e.1), Some(s.1), Some(&context));
 				},
 			};
 
@@ -45,7 +47,6 @@ fn main() -> ExitCode {
 
 	if message::errored() {
 		message::abort();
-		message::print_all(s, &Some(options.input.to_str().unwrap().to_string()));
 		return ExitCode::FAILURE;
 	}
 

@@ -118,13 +118,17 @@ lexer! {
 pub struct Lexer<'a> {
 	original: &'a str,
 	remaining: &'a str,
+	context: message::Context<'a>,
 }
 
 impl<'a> Lexer<'a> {
-	pub fn new(s: &'a str) -> Lexer<'a> {
+	pub fn new(context: message::Context<'a>) -> Lexer<'a> {
+
+
 		Lexer {
-			original: s,
-			remaining: s,
+			original: context.source,
+			remaining: context.source,
+			context: context,
 		}
 	}
 }
@@ -154,7 +158,7 @@ impl<'a> Iterator for Lexer<'a> {
 				}
 
 				Token::Unknown(text) => {
-					message::error(format!("unexpected character `{}`", text), span);
+					message::error(format!("unexpected character `{}`", text), Some(span), Some(&self.context));
 					continue;
 				}
 

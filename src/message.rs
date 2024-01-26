@@ -2,70 +2,67 @@ use std::sync::Mutex;
 use colored::Colorize;
 use crate::lexer::Span;
 
-pub enum MessageKind {
-	Abort,
-	Error,
-	Warning,
-	Hint,
-}
-
-pub struct Message {
-	kind: MessageKind,
-	text: String,
-	span: Span,
-}
-
 //Thread safety. Not necessary yet but good practice.
 static DID_ERROR: Mutex<bool> = Mutex::new(false);
-static MESSAGES: Mutex<Vec<Message>> = Mutex::new(vec![]);
+
+pub struct Context<'a> {
+	pub filename: &'a String,
+	pub source: &'a String,
+}
+
+fn print_message(text: String, span: Option<Span>, context: Option<&Context>) {
+	eprintln!("{}", text);
+
+	match context {
+		None => {},
+		Some(context) => {
+			match span {
+				None => {
+					//"None" branch should only happen on EOF errors.
+
+					let lines: Vec<&str> = context.source.lines().collect();
+
+					//Print filename, and the last lines of the file
+					eprintln!("  {} {}:{}", "-->".bright_blue().bold(), context.filename, lines.len());
+					eprintln!("   {}", "|".bright_blue().bold());
+					if lines.len() > 1 {
+						eprintln!("{:<3}{} {}", format!("{}", lines.len()-1).bright_blue().bold(), "|".bright_blue().bold(), &lines[lines.len() - 2]);
+					}
+					if lines.len() > 0 {
+						eprintln!("{:<3}{} {} {}", format!("{}", lines.len()).bright_blue().bold(), "|".bright_blue().bold(), &lines[lines.len() - 1], "(EOF)".bright_blue().bold());
+						eprintln!("   {} {} {}", "|".bright_blue().bold(), " ".repeat(lines[lines.len() - 1].len()), " ^^^".bright_blue().bold());
+					} else {
+						eprintln!("{:<3}{} {}", format!("{}", lines.len()).bright_blue().bold(), "|".bright_blue().bold(), "(EOF)".bright_blue().bold());
+						eprintln!("   {}", "|  ^^^".bright_blue().bold());
+					}
+				},
+				Some(span) => {
+					print_context(Some(context.filename), context.source, span);
+				},
+			};
+		}
+	};
+}
 
 pub fn abort() {
-	let mut msgs = MESSAGES.lock().unwrap();
-	let msg: Message = Message { kind: MessageKind::Abort, text: "Unable to continue due to previous errors".to_string(), span: Span{lo:0,hi:0} };
-	msgs.push(msg);
+	eprintln!("{}: {}", "aborted".red().bold(), "Unable to continue due to previous errors".bold());
 }
 
-pub fn error(text: String, span: Span) {
-	let mut msgs = MESSAGES.lock().unwrap();
-	let msg: Message = Message { kind: MessageKind::Error, text: text, span: span };
-	msgs.push(msg);
-
+pub fn error(text: String, span: Option<Span>, context: Option<&Context>) {
 	let mut data = DID_ERROR.lock().unwrap();
 	*data = true;
+
+	print_message(format!("{}: {}", "error".red().bold(), text.bold()), span, context);
 }
 
-pub fn eof_error(filename: &Option<String>, full_text: &String, text: String) {
-	let line_no = full_text.chars().filter(|&c| c == '\n').count() + 1;
-
-	//Print filename, line number and column number.
-	eprintln!("{}: {}", "error".red().bold(), text.bold());
-	match filename {
-		None => {
-			eprintln!("  {} stdin:{}", "-->".bright_blue().bold(), line_no);
-		},
-		Some(s) => {
-			eprintln!("  {} {}:{}", "-->".bright_blue().bold(), s, line_no);
-		}
-	}
-	eprintln!("   {} {}", "|".bright_blue().bold(), "(EOF)".bright_blue().bold());
-
-	let mut data = DID_ERROR.lock().unwrap();
-	*data = true;
+pub fn warn(text: String, span: Option<Span>, context: Option<&Context>) {
+	print_message(format!("{}: {}", "warn".yellow().bold(), text), span, context);
 }
 
-pub fn warn(text: String, span: Span) {
-	let mut msgs = MESSAGES.lock().unwrap();
-	let msg: Message = Message { kind: MessageKind::Warning, text: text, span: span };
-	msgs.push(msg);
+pub fn hint(text: String, span: Option<Span>, context: Option<&Context>) {
+	print_message(format!("{}: {}", "hint".bright_blue().bold(), text), span, context);
 }
 
-pub fn hint(text: String, span: Span) {
-	let mut msgs = MESSAGES.lock().unwrap();
-	let msg: Message = Message { kind: MessageKind::Hint, text: text, span: span };
-	msgs.push(msg);
-}
-
-//Unlike the other message types, info messages print immediately.
 pub fn info(text: &str) {
 	eprintln!("{}: {}", "info".bold(), text);
 }
@@ -74,7 +71,7 @@ pub fn errored() -> bool {
 	*DID_ERROR.lock().unwrap()
 }
 
-fn print_context(filename: &Option<String>, full_text: &String, span: Span) {
+fn print_context(filename: Option<&String>, full_text: &String, span: Span) {
 	let before = &full_text[0..span.lo];
 	let after = &full_text[span.hi..full_text.len()];
 	let line_begin = (1 + {
@@ -115,30 +112,4 @@ fn print_context(filename: &Option<String>, full_text: &String, span: Span) {
 	eprintln!("   {}", "|".bright_blue().bold());
 	eprintln!("{:<3}{} {}", format!("{}", line_no).bright_blue().bold(), "|".bright_blue().bold(), &full_text[line_begin ..= line_end]);
 	eprintln!("   {} {}{}", "|".bright_blue().bold(), " ".repeat(span.lo - line_begin), "^".repeat(span.hi - span.lo).bright_blue().bold());
-}
-
-pub fn print_all(full_text: String, filename: &Option<String>) {
-	let msgs = MESSAGES.lock().unwrap();
-
-	for message in msgs.iter() {
-		match message.kind {
-			MessageKind::Abort => {
-				eprintln!("{}: {}", "aborted".red().bold(), message.text.bold());
-			},
-
-			MessageKind::Error => {
-				eprintln!("{}: {}", "error".red().bold(), message.text.bold());
-				print_context(&filename, &full_text, message.span);
-			},
-
-			MessageKind::Warning => {
-				eprintln!("{}: {}", "warn".yellow().bold(), message.text.bold());
-				print_context(&filename, &full_text, message.span);
-			},
-
-			MessageKind::Hint => {
-				eprintln!("{}: {}", "hint".bright_blue().bold(), message.text);
-			},
-		};
-	}
 }
