@@ -1,53 +1,42 @@
-use std::io::Read;
 use std::process::ExitCode;
 use std::fs;
-use std::env;
 
 mod lexer;
 mod parser;
 pub mod message;
+mod flags;
 
 fn main() -> ExitCode {
-	let mut s = String::new();
-	let mut filename: Option<String> = None;
+	let options = flags::read();
 
-	//If an argument is given, assume that's the input file.
-	//Otherwise, read program text from stdin.
-	let args: Vec<String> = env::args().collect();
-
-	match args.get(1) {
-		None => {
-			std::io::stdin().read_to_string(&mut s).unwrap();
-		},
-		Some(fname) => {
-			s = match fs::read_to_string(fname) {
-				Ok(file_contents) => file_contents,
-				Err(error) => {
-					eprintln!("Error reading file: {}", error);
-					return ExitCode::FAILURE;
-				}
-			};
-			filename = Some(fname.to_string());
-		},
-	}
+	//Read input file
+	let mut s = match fs::read_to_string(&options.input) {
+		Ok(file_contents) => file_contents,
+		Err(error) => {
+			eprintln!("Error reading file {:?}: {}", options.input, error);
+			return ExitCode::FAILURE;
+		}
+	};
 
 	s = s.replace("\t", " "); //For formatting reasons, replace all tabs with spaces.
 
 	//Create lexer (iterator), with debug info for each token read
-	let lexer = lexer::Lexer::new(&s);//.inspect(|tok| eprintln!("tok: {:?}", tok));
+	let filename = options.input.to_str().unwrap().to_string();
+	let lexer = lexer::Lexer::new(message::Context { filename: &filename, source: &s });//.inspect(|tok| eprintln!("tok: {:?}", tok));
 
 	message::info("Building AST...");
 
 	//Read input, splitting into tokens as it's read.
+	let context = message::Context { filename: &filename, source: &s };
 	let ast = match parser::parse(lexer) {
 		Err(e) => {
 			match e.0 {
 				None => {
 					//We hit EOF
-					message::eof_error(&filename, &s, format!("{}", e.1));
+					message::error(format!("{}", "Unexpected end of file"), None, Some(&context));
 				},
 				Some(s) => {
-					message::error(format!("{}", e.1), s.1);
+					message::error(format!("{}", e.1), Some(s.1), Some(&context));
 				},
 			};
 
@@ -58,11 +47,12 @@ fn main() -> ExitCode {
 
 	if message::errored() {
 		message::abort();
-		message::print_all(s, &filename);
 		return ExitCode::FAILURE;
 	}
 
-	println!("{}", parser::pretty(ast));
+	if options.ast {
+		println!("{}", parser::pretty(ast));
+	}
 
 	message::info("Finished compilation.");
 	return ExitCode::SUCCESS;
