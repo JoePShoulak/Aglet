@@ -3,8 +3,11 @@ use std::fs;
 
 mod lexer;
 mod parser;
+mod semantics;
+
 pub mod message;
 mod flags;
+mod types;
 
 fn main() -> ExitCode {
 	let options = flags::read();
@@ -50,10 +53,20 @@ fn main() -> ExitCode {
 		return ExitCode::FAILURE;
 	}
 
+	let ast = ast.unwrap();
+
 	//--ast flag is only available in debug builds
 	#[cfg(debug_assertions)]
 	if options.ast {
-		println!("{}", parser::pretty(ast));
+		println!("{}", parser::pretty(&ast));
+	}
+
+	message::info("Running semantic analysis...");
+	ast.analyze(&context);
+
+	if message::errored() {
+		message::abort();
+		return ExitCode::FAILURE;
 	}
 
 	message::info("Finished compilation.");

@@ -55,8 +55,8 @@ pub fn error(text: String, span: Option<Span>, context: Option<&Context>) {
 	print_message(format!("{}: {}", "error".red().bold(), text.bold()), span, context);
 }
 
-pub fn warn(text: String, span: Option<Span>, context: Option<&Context>) {
-	print_message(format!("{}: {}", "warn".yellow().bold(), text), span, context);
+pub fn warning(text: String, span: Option<Span>, context: Option<&Context>) {
+	print_message(format!("{}: {}", "warning".yellow().bold(), text.bold()), span, context);
 }
 
 pub fn hint(text: String, span: Option<Span>, context: Option<&Context>) {

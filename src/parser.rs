@@ -15,9 +15,9 @@ pub mod ast {
 
 	#[derive(Debug)]
 	pub enum Stmt {
-		ExprStmt(Box<Expr>),
+		ExprStmt(Box<Expression>),
 		FuncDecl(Box<String>, Box<Vec<Param>>, Box<String>, Box<Program>),
-		ReturnStmt(Box<Expr>),
+		ReturnStmt(Box<Option<Expression>>),
 		IfStmt(Box<Expression>, Box<Program>, Box<Program>),
 		VarDecl(Box<Vec<Token>>, Box<String>, Box<Option<String>>, Box<Expression>),
 	}
@@ -50,9 +50,8 @@ pub mod ast {
 		Assign(Box<Expression>, Box<Expression>),
 
 		Var(String),
-		Literal(i64),
+		Integer(i64),
 		FuncCall(Box<Expression>, Box<Vec<Expression>>),
-		Null,
 	}
 
 	#[derive(Debug)]
@@ -104,7 +103,7 @@ parser! {
 	statement: Statement {
 		assign[e] Semicolon => Statement {
 			span: span!(),
-			node: Stmt::ExprStmt(Box::new(e.node)),
+			node: Stmt::ExprStmt(Box::new(e)),
 		},
 
 		KwdFunction Identifier(name) LParen RParen Arrow Identifier(return_type) LBrace program[p] RBrace => Statement {
@@ -119,12 +118,12 @@ parser! {
 
 		KwdReturn assign[e] Semicolon => Statement {
 			span: span!(),
-			node: Stmt::ReturnStmt(Box::new(e.node)),
+			node: Stmt::ReturnStmt(Box::new(Some(e))),
 		},
 
 		KwdReturn Semicolon => Statement {
 			span: span!(),
-			node: Stmt::ReturnStmt(Box::new(Expr::Null)),
+			node: Stmt::ReturnStmt(Box::new(None)),
 		},
 
 		KwdIf assign[e] LBrace program[p] RBrace KwdElse LBrace program[p2] RBrace => Statement {
@@ -256,7 +255,7 @@ parser! {
 
 		Integer(i) => Expression {
 			span: span!(),
-			node: Expr::Literal(i),
+			node: Expr::Integer(i),
 		},
 
 		atom[lhs] LParen param_list[rhs] RParen => Expression {
@@ -288,12 +287,12 @@ pub fn parse<I: Iterator<Item = (Token, Span)>>(i: I) -> Result<Program, (Option
 #[cfg(debug_assertions)] use regex::Regex;
 #[cfg(debug_assertions)] use colored::Colorize;
 #[cfg(debug_assertions)]
-pub fn pretty(ast: Option<Program>) -> String {
+pub fn pretty(ast: &Program) -> String {
 	let fluff = Regex::new(r"\n *[\)\}\]],?").unwrap();
 	let spans = Regex::new(r"\n *(lo|hi)").unwrap();
 	let other = Regex::new(r"((Literal|Var)\()\n *([^\n]+)").unwrap();
 
-	let text = format!("{:#?}", ast.unwrap()).replace("    ", "  ");
+	let text = format!("{:#?}", ast).replace("    ", "  ");
 
 	let s1 = fluff.replace_all(&text, "");
 	let s2 = spans.replace_all(&s1, " $1");
