@@ -138,8 +138,25 @@ fn print_context(filename: Option<&String>, full_text: &String, span: Span) {
 		}
 	}
 
-	//Print the line in question and highlight what element is being referred to.
+	//Print the lines in question and highlight what element is being referred to.
 	eprintln!("   {}", "|".bright_blue().bold());
-	eprintln!("{:<3}{} {}", format!("{}", line_no).bright_blue().bold(), "|".bright_blue().bold(), &full_text[line_begin ..= line_end]);
-	eprintln!("   {} {}{}", "|".bright_blue().bold(), " ".repeat(span.lo - line_begin), "^".repeat(span.hi - span.lo).bright_blue().bold());
+
+	let lines: Vec<&str> = full_text[line_begin ..= line_end].lines().collect();
+	let total = lines.len();
+	let mut ct = 0;
+	for line in lines {
+		if ct == 0 || ct == total - 1 {
+			eprintln!("{:<3}{} {}", format!("{}", line_no + ct).bright_blue().bold(), "|".bright_blue().bold(), line);
+		}
+		if ct == 1 && total > 2
+		{
+			eprintln!("   {}", "|    ...".bright_blue().bold());
+		}
+		ct += 1;
+	}
+
+	if ct == 1 {
+		eprintln!("   {} {}{}", "|".bright_blue().bold(), " ".repeat(span.lo - line_begin), "^".repeat(span.hi - span.lo).bright_blue().bold());
+	}
+
 }
