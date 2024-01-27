@@ -60,7 +60,37 @@ pub fn warning(text: String, span: Option<Span>, context: Option<&Context>) {
 }
 
 pub fn hint(text: String, span: Option<Span>, context: Option<&Context>) {
-	print_message(format!("{}: {}", "hint".bright_blue().bold(), text), span, context);
+	match context {
+		Some(ctx) => {
+			match span {
+				Some(span) => {
+					let before = &ctx.source[0..span.lo];
+					let line_begin = (1 + {
+						let mut ix = -1;
+						for (index, c) in before.char_indices().rev() {
+							if c == '\n' {
+								ix = index as isize;
+								break;
+							}
+						}
+						ix
+					}) as usize;
+
+					let col_no = span.lo - line_begin;
+
+					//If hint is related to a previous message, print it differently
+					eprintln!("   {} {}{} {}", "|".bright_blue().bold(), " ".repeat(col_no), "∟".bright_blue().bold(), text);
+				},
+
+				None => {
+					print_message(format!("   {} {}: {}", "=".bright_blue().bold(), "hint".bold(), text), span, context);
+				},
+			}
+		},
+		None => {
+			print_message(format!("   {} {}: {}", "=".bright_blue().bold(), "hint".bold(), text), span, context);
+		},
+	}
 }
 
 pub fn info(text: &str) {

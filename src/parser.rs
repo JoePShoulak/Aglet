@@ -16,7 +16,7 @@ pub mod ast {
 	#[derive(Debug)]
 	pub enum Stmt {
 		ExprStmt(Box<Expression>),
-		FuncDecl(Box<String>, Box<Vec<Param>>, Box<String>, Box<Program>),
+		FuncDecl(Box<Ident>, Box<Vec<Param>>, Box<Ident>, Box<Program>),
 		ReturnStmt(Box<Option<Expression>>),
 		IfStmt(Box<Expression>, Box<Program>, Box<Program>),
 		VarDecl(Box<Vec<Token>>, Box<String>, Box<Option<String>>, Box<Expression>),
@@ -70,6 +70,12 @@ pub mod ast {
 		pub name: String,
 		pub datatype: String,
 	}
+
+	#[derive(Debug)]
+	pub struct Ident {
+		pub span: Span,
+		pub value: String,
+	}
 }
 
 use ast::*;
@@ -106,12 +112,12 @@ parser! {
 			node: Stmt::ExprStmt(Box::new(e)),
 		},
 
-		KwdFunction Identifier(name) LParen RParen Arrow Identifier(return_type) LBrace program[p] RBrace => Statement {
+		KwdFunction ident[name] LParen RParen Arrow ident[return_type] LBrace program[p] RBrace => Statement {
 			span: span!(),
 			node: Stmt::FuncDecl(Box::new(name), Box::new(vec![]), Box::new(return_type), Box::new(p)),
 		},
 
-		KwdFunction Identifier(name) LParen param_decl_list[params] RParen Arrow Identifier(return_type) LBrace program[p] RBrace => Statement {
+		KwdFunction ident[name] LParen param_decl_list[params] RParen Arrow ident[return_type] LBrace program[p] RBrace => Statement {
 			span: span!(),
 			node: Stmt::FuncDecl(Box::new(name), Box::new(params), Box::new(return_type), Box::new(p)),
 		},
@@ -147,6 +153,13 @@ parser! {
 			span: span!(),
 			node: Stmt::VarDecl(Box::new(q), Box::new(name), Box::new(Some(typename)), Box::new(e)),
 		},
+	}
+
+	ident: Ident {
+		Identifier(value) => Ident {
+			span: span!(),
+			value: value,
+		}
 	}
 
 	//Variable qualifiers are an array, just in case we want to allow multiple quals on var decls in the future.

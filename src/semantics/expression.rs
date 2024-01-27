@@ -9,14 +9,52 @@ impl Expression {
 		match &self.node {
 			Integer(value) => {
 				//Warn if the value will not fit in 2 bytes
-				if *value >= 32768 {
-					message::error("Integer value exceeds the size of its type!".to_string(), Some(self.span), Some(analyzer.context));
+				if *value > 32767 {
+					message::error("Value exceeds the maximum for a signed 2-byte integer (max 32767)".to_string(), Some(self.span), Some(analyzer.context));
 				}
 			},
+
+			Neg(expr) => {
+				match &expr.node {
+					//Negative integers have a different "max" than positive, by 1.
+					Integer(value) => {
+						if *value > 32768 {
+							message::error("Value exceeds the minimum for a signed 2-byte integer (min -32768)".to_string(), Some(self.span), Some(analyzer.context));
+						}
+					},
+					_ => {
+						expr.analyze(analyzer);
+					},
+				}
+			}
 
 			Add(a, b) => {
 				a.analyze(analyzer);
 				b.analyze(analyzer);
+			},
+
+			FuncCall(name, params) => {
+				match &name.node {
+					Var(id) => {
+						match analyzer.get_function(id) {
+							None => {
+								message::error(format!("Use of undeclared function `{}`", id), Some(name.span), Some(analyzer.context));
+							},
+
+							Some(func) => {
+								let ct = func.param_types.len();
+								if params.len() != ct {
+									message::error(format!("Expected {} argument{} to function `{}`, got {}", ct, if ct == 1 {""} else {"s"}, id, params.len()), Some(self.span), Some(analyzer.context));
+									message::hint(format!("Function signature is `{}{}`", id, func), Some(self.span), Some(analyzer.context));
+								}
+							}
+						}
+					},
+
+					_ => {
+						message::error("Composite function names are not supported yet".to_string(), Some(name.span), Some(analyzer.context));
+					}
+				}
 			},
 
 			#[cfg(debug_assertions)]
