@@ -82,7 +82,7 @@ lexer! {
 
 	//Values
 	"[a-zA-Z_][a-zA-Z_0-9]*" => Token::Identifier(text.to_owned()),
-	"[0-9]+" => Token::Integer(text.parse().unwrap()),
+	"[0-9][0-9_]*" => Token::Integer(text.replace("_", "").parse().unwrap()),
 
 	//Language Structures
 	"\\(" => Token::LParen,
