@@ -118,13 +118,11 @@ lexer! {
 pub struct Lexer<'a> {
 	original: &'a str,
 	remaining: &'a str,
-	context: message::Context<'a>,
+	context: &'a message::Context<'a>,
 }
 
 impl<'a> Lexer<'a> {
-	pub fn new(context: message::Context<'a>) -> Lexer<'a> {
-
-
+	pub fn new(context: &'a message::Context) -> Lexer<'a> {
 		Lexer {
 			original: context.source,
 			remaining: context.source,

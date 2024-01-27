@@ -23,14 +23,15 @@ fn main() -> ExitCode {
 
 	s = s.replace("\t", " "); //For formatting reasons, replace all tabs with spaces.
 
-	//Create lexer (iterator), with debug info for each token read
 	let filename = options.input.to_str().unwrap().to_string();
-	let lexer = lexer::Lexer::new(message::Context { filename: &filename, source: &s });//.inspect(|tok| eprintln!("tok: {:?}", tok));
+	let context = message::Context { filename: &filename, source: &s };
+
+	//Create lexer (iterator), with debug info for each token read
+	let lexer = lexer::Lexer::new(&context);//.inspect(|tok| eprintln!("tok: {:?}", tok));
 
 	message::info("Building AST...");
 
 	//Read input, splitting into tokens as it's read.
-	let context = message::Context { filename: &filename, source: &s };
 	let ast = match parser::parse(lexer) {
 		Err(e) => {
 			match e.0 {
@@ -62,7 +63,7 @@ fn main() -> ExitCode {
 	}
 
 	message::info("Running semantic analysis...");
-	ast.analyze(&context);
+	let _analysis = semantics::Analyzer::run(&ast, &context);
 
 	if message::errored() {
 		message::abort();

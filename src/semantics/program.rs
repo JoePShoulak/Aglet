@@ -1,10 +1,10 @@
 use crate::parser::ast::Program;
-use crate::message::Context;
+use crate::semantics::Analyzer;
 
 impl Program {
-	pub fn analyze(&self, context: &Context) {
+	pub fn analyze(&self, analyzer: &mut Analyzer) {
 		for stmt in &self.stmts {
-			stmt.analyze(context);
+			stmt.analyze(analyzer);
 		}
 	}
 }
