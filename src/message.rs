@@ -144,19 +144,23 @@ fn print_context(filename: Option<&String>, full_text: &String, span: Span) {
 	let lines: Vec<&str> = full_text[line_begin ..= line_end].lines().collect();
 	let total = lines.len();
 	let mut ct = 0;
+	let mut max_len = 1;
 	for line in lines {
 		if ct == 0 || ct == total - 1 {
 			eprintln!("{:<3}{} {}", format!("{}", line_no + ct).bright_blue().bold(), "|".bright_blue().bold(), line);
 		}
-		if ct == 1 && total > 2
-		{
+		if ct == 1 && total > 2 {
 			eprintln!("   {}", "|    ...".bright_blue().bold());
+		} else {
+			max_len = std::cmp::max(max_len, line.len());
 		}
 		ct += 1;
 	}
 
 	if ct == 1 {
 		eprintln!("   {} {}{}", "|".bright_blue().bold(), " ".repeat(span.lo - line_begin), "^".repeat(span.hi - span.lo).bright_blue().bold());
+	} else {
+		eprintln!("   {} {}{}", "|".bright_blue().bold(), " ".repeat(span.lo - line_begin), "^".repeat(max_len).bright_blue().bold());
 	}
 
 }
