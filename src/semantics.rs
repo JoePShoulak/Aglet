@@ -40,6 +40,9 @@ impl<'a> Analyzer<'a> {
 			context: context,
 			scopes: vec![Scope::new()],
 		};
+
+		analyzer.set_function(&String::from("print"), vec![String::from("int")], &String::from("void"));
+
 		ast.analyze(&mut analyzer);
 		analyzer
 	}

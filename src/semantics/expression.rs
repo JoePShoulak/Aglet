@@ -36,6 +36,10 @@ impl Expression {
 			FuncCall(name, params) => {
 				match &name.node {
 					Var(id) => {
+						for param in params.iter() {
+							param.analyze(analyzer);
+						}
+
 						match analyzer.get_function(id) {
 							None => {
 								message::error(format!("Use of undeclared function `{}`", id), Some(name.span), Some(analyzer.context));
