@@ -148,11 +148,10 @@ fn print_context(filename: Option<&String>, full_text: &String, span: Span) {
 	for line in lines {
 		if ct == 0 || ct == total - 1 {
 			eprintln!("{:<3}{} {}", format!("{}", line_no + ct).bright_blue().bold(), "|".bright_blue().bold(), line);
+			max_len = std::cmp::max(max_len, line.len()-1);
 		}
 		if ct == 1 && total > 2 {
 			eprintln!("   {}", "|    ...".bright_blue().bold());
-		} else {
-			max_len = std::cmp::max(max_len, line.len());
 		}
 		ct += 1;
 	}
