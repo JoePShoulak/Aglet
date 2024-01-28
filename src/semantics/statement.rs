@@ -23,7 +23,7 @@ impl Statement {
 				}
 
 				if !analyzer.valid_return_type(&return_type.value) {
-					message::error(format!("Unknown return type `{}`. Valid types are `int` `char` or `void`", return_type.value), Some(return_type.span), Some(analyzer.context));
+					message::error(format!("Unknown return type `{}`. Valid types are `int` or `void`", return_type.value), Some(return_type.span), Some(analyzer.context));
 				}
 
 				if name.value == "main" {

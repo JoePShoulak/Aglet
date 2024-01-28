@@ -73,6 +73,10 @@ impl<'a> Analyzer<'a> {
 	}
 
 	pub fn valid_return_type(&self, return_type: &String) -> bool {
-		["int", "char", "void"].iter().any(|&s| s == return_type)
+		["int", "void"].iter().any(|&s| s == return_type)
+	}
+
+	pub fn valid_data_type(&self, data_type: &String) -> bool {
+		["int"].iter().any(|&s| s == data_type)
 	}
 }
