@@ -11,6 +11,11 @@ pub struct FuncSig {
 	param_types: Vec<String>,
 }
 
+pub struct VarSig {
+	data_type: String,
+	mutable: bool,
+}
+
 impl std::fmt::Display for FuncSig {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		write!(f, "({}) -> {}", self.param_types.join(", "), self.return_type)
@@ -19,12 +24,14 @@ impl std::fmt::Display for FuncSig {
 
 pub struct Scope {
 	functions: HashMap<String, FuncSig>,
+	variables: HashMap<String, VarSig>,
 }
 
 impl Scope {
 	fn new() -> Scope {
 		Scope {
 			functions: HashMap::new(),
+			variables: HashMap::new(),
 		}
 	}
 }
@@ -77,6 +84,18 @@ impl<'a> Analyzer<'a> {
 
 	pub fn valid_return_type(&self, return_type: &String) -> bool {
 		["int", "void"].iter().any(|&s| s == return_type)
+	}
+
+	pub fn get_variable(&self, name: &String) -> Option<&VarSig> {
+		self.scopes.last().unwrap().variables.get(name)
+	}
+
+	pub fn set_variable(&mut self, name: &String, data_type: &String, mutable: bool) {
+		let scope = self.scopes.last_mut().unwrap();
+		scope.variables.insert(name.to_string(), VarSig {
+			data_type: data_type.to_string(),
+			mutable: mutable,
+		});
 	}
 
 	pub fn valid_data_type(&self, data_type: &String) -> bool {

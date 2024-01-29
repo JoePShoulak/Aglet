@@ -61,6 +61,15 @@ impl Expression {
 				}
 			},
 
+			Var(name) => {
+				match analyzer.get_variable(name) {
+					None => {
+						message::error(format!("Use of undeclared variable `{}`", name), Some(self.span), Some(analyzer.context));
+					},
+					Some(_) => {},
+				}
+			},
+
 			#[cfg(debug_assertions)]
 			a => {
 				message::warning(format!("No semantic analysis defined for variant of node `{}`", types::basename(a)), Some(self.span), Some(analyzer.context));

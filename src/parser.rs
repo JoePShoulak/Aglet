@@ -1,6 +1,6 @@
+
 pub mod ast {
 	use crate::lexer::Span;
-	use crate::lexer::Token;
 
 	#[derive(Debug)]
 	pub struct Program {
@@ -19,7 +19,7 @@ pub mod ast {
 		FuncDecl(Box<Ident>, Box<Vec<Param>>, Box<Ident>, Box<Program>),
 		ReturnStmt(Box<Option<Expression>>),
 		IfStmt(Box<Expression>, Box<Program>, Box<Program>),
-		VarDecl(Box<Vec<Token>>, Box<String>, Box<Option<String>>, Box<Expression>),
+		VarDecl(Box<Vec<Qualifier>>, Box<Ident>, Box<Option<Ident>>, Box<Expression>),
 	}
 
 	#[derive(Debug)]
@@ -75,6 +75,12 @@ pub mod ast {
 	pub struct Ident {
 		pub span: Span,
 		pub value: String,
+	}
+
+	#[derive(Debug)]
+	pub enum Qualifier {
+		Mutable,
+		Immutable,
 	}
 }
 
@@ -143,13 +149,13 @@ parser! {
 		},
 
 		//Variable declaration without a specified type.
-		qualifiers[q] Identifier(name) OperAssign assign[e] Semicolon => Statement {
+		qualifiers[q] ident[name] OperAssign assign[e] Semicolon => Statement {
 			span: span!(),
 			node: Stmt::VarDecl(Box::new(q), Box::new(name), Box::new(None), Box::new(e)),
 		},
 
 		//Variable declaration WITH a specified type.
-		qualifiers[q] Identifier(name) Colon Identifier(typename) OperAssign assign[e] Semicolon => Statement {
+		qualifiers[q] ident[name] Colon ident[typename] OperAssign assign[e] Semicolon => Statement {
 			span: span!(),
 			node: Stmt::VarDecl(Box::new(q), Box::new(name), Box::new(Some(typename)), Box::new(e)),
 		},
@@ -163,9 +169,13 @@ parser! {
 	}
 
 	//Variable qualifiers are an array, just in case we want to allow multiple quals on var decls in the future.
-	qualifiers: Vec<Token> {
-		KwdConstant => vec![KwdConstant],
-		KwdMutable => vec![KwdMutable],
+	qualifiers: Vec<Qualifier> {
+		qual[q] => vec![q],
+	}
+
+	qual: Qualifier {
+		KwdConstant => Qualifier::Immutable,
+		KwdMutable => Qualifier::Mutable,
 	}
 
 	param_decl_list: Vec<Param> {
