@@ -3,10 +3,17 @@ use std::fs;
 
 mod lexer;
 mod parser;
+mod semantics;
+
 pub mod message;
 mod flags;
 
 fn main() -> ExitCode {
+	//Disable colors globally if stderr or stdout are not TTY
+	if !atty::is(atty::Stream::Stdout) || !atty::is(atty::Stream::Stderr) {
+		colored::control::set_override(false);
+	}
+
 	let options = flags::read();
 
 	//Read input file
@@ -20,14 +27,15 @@ fn main() -> ExitCode {
 
 	s = s.replace("\t", " "); //For formatting reasons, replace all tabs with spaces.
 
-	//Create lexer (iterator), with debug info for each token read
 	let filename = options.input.to_str().unwrap().to_string();
-	let lexer = lexer::Lexer::new(message::Context { filename: &filename, source: &s });//.inspect(|tok| eprintln!("tok: {:?}", tok));
+	let context = message::Context { filename: &filename, source: &s };
+
+	//Create lexer (iterator), with debug info for each token read
+	let lexer = lexer::Lexer::new(&context);//.inspect(|tok| eprintln!("tok: {:?}", tok));
 
 	message::info("Building AST...");
 
 	//Read input, splitting into tokens as it's read.
-	let context = message::Context { filename: &filename, source: &s };
 	let ast = match parser::parse(lexer) {
 		Err(e) => {
 			match e.0 {
@@ -50,10 +58,20 @@ fn main() -> ExitCode {
 		return ExitCode::FAILURE;
 	}
 
+	let ast = ast.unwrap();
+
 	//--ast flag is only available in debug builds
 	#[cfg(debug_assertions)]
 	if options.ast {
-		println!("{}", parser::pretty(ast));
+		println!("{}", parser::pretty(&ast));
+	}
+
+	message::info("Running semantic analysis...");
+	let _analysis = semantics::Analyzer::run(&ast, &context);
+
+	if message::errored() {
+		message::abort();
+		return ExitCode::FAILURE;
 	}
 
 	message::info("Finished compilation.");

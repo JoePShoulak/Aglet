@@ -1,6 +1,6 @@
+
 pub mod ast {
 	use crate::lexer::Span;
-	use crate::lexer::Token;
 
 	#[derive(Debug)]
 	pub struct Program {
@@ -15,11 +15,11 @@ pub mod ast {
 
 	#[derive(Debug)]
 	pub enum Stmt {
-		ExprStmt(Box<Expr>),
-		FuncDecl(Box<String>, Box<Vec<Param>>, Box<String>, Box<Program>),
-		ReturnStmt(Box<Expr>),
+		ExprStmt(Box<Expression>),
+		FuncDecl(Box<Ident>, Box<Vec<Param>>, Box<Ident>, Box<Program>),
+		ReturnStmt(Box<Option<Expression>>),
 		IfStmt(Box<Expression>, Box<Program>, Box<Program>),
-		VarDecl(Box<Vec<Token>>, Box<String>, Box<Option<String>>, Box<Expression>),
+		VarDecl(Box<Vec<Qualifier>>, Box<Ident>, Box<Option<Ident>>, Box<Expression>),
 	}
 
 	#[derive(Debug)]
@@ -50,9 +50,8 @@ pub mod ast {
 		Assign(Box<Expression>, Box<Expression>),
 
 		Var(String),
-		Literal(i64),
+		Integer(i64),
 		FuncCall(Box<Expression>, Box<Vec<Expression>>),
-		Null,
 	}
 
 	#[derive(Debug)]
@@ -70,6 +69,18 @@ pub mod ast {
 		pub span: Span,
 		pub name: String,
 		pub datatype: String,
+	}
+
+	#[derive(Debug)]
+	pub struct Ident {
+		pub span: Span,
+		pub value: String,
+	}
+
+	#[derive(Debug)]
+	pub enum Qualifier {
+		Mutable,
+		Immutable,
 	}
 }
 
@@ -104,27 +115,27 @@ parser! {
 	statement: Statement {
 		assign[e] Semicolon => Statement {
 			span: span!(),
-			node: Stmt::ExprStmt(Box::new(e.node)),
+			node: Stmt::ExprStmt(Box::new(e)),
 		},
 
-		KwdFunction Identifier(name) LParen RParen Arrow Identifier(return_type) LBrace program[p] RBrace => Statement {
+		KwdFunction ident[name] LParen RParen Arrow ident[return_type] LBrace program[p] RBrace => Statement {
 			span: span!(),
 			node: Stmt::FuncDecl(Box::new(name), Box::new(vec![]), Box::new(return_type), Box::new(p)),
 		},
 
-		KwdFunction Identifier(name) LParen param_decl_list[params] RParen Arrow Identifier(return_type) LBrace program[p] RBrace => Statement {
+		KwdFunction ident[name] LParen param_decl_list[params] RParen Arrow ident[return_type] LBrace program[p] RBrace => Statement {
 			span: span!(),
 			node: Stmt::FuncDecl(Box::new(name), Box::new(params), Box::new(return_type), Box::new(p)),
 		},
 
 		KwdReturn assign[e] Semicolon => Statement {
 			span: span!(),
-			node: Stmt::ReturnStmt(Box::new(e.node)),
+			node: Stmt::ReturnStmt(Box::new(Some(e))),
 		},
 
 		KwdReturn Semicolon => Statement {
 			span: span!(),
-			node: Stmt::ReturnStmt(Box::new(Expr::Null)),
+			node: Stmt::ReturnStmt(Box::new(None)),
 		},
 
 		KwdIf assign[e] LBrace program[p] RBrace KwdElse LBrace program[p2] RBrace => Statement {
@@ -138,22 +149,33 @@ parser! {
 		},
 
 		//Variable declaration without a specified type.
-		qualifiers[q] Identifier(name) OperAssign assign[e] Semicolon => Statement {
+		qualifiers[q] ident[name] OperAssign assign[e] Semicolon => Statement {
 			span: span!(),
 			node: Stmt::VarDecl(Box::new(q), Box::new(name), Box::new(None), Box::new(e)),
 		},
 
 		//Variable declaration WITH a specified type.
-		qualifiers[q] Identifier(name) Colon Identifier(typename) OperAssign assign[e] Semicolon => Statement {
+		qualifiers[q] ident[name] Colon ident[typename] OperAssign assign[e] Semicolon => Statement {
 			span: span!(),
 			node: Stmt::VarDecl(Box::new(q), Box::new(name), Box::new(Some(typename)), Box::new(e)),
 		},
 	}
 
+	ident: Ident {
+		Identifier(value) => Ident {
+			span: span!(),
+			value: value,
+		}
+	}
+
 	//Variable qualifiers are an array, just in case we want to allow multiple quals on var decls in the future.
-	qualifiers: Vec<Token> {
-		KwdConstant => vec![KwdConstant],
-		KwdMutable => vec![KwdMutable],
+	qualifiers: Vec<Qualifier> {
+		qual[q] => vec![q],
+	}
+
+	qual: Qualifier {
+		KwdConstant => Qualifier::Immutable,
+		KwdMutable => Qualifier::Mutable,
 	}
 
 	param_decl_list: Vec<Param> {
@@ -174,7 +196,7 @@ parser! {
 
 	//Assignment (lowest precedence)
 	assign: Expression {
-		assign[lhs] OperAssign compare[rhs] => Expression {
+		compare[lhs] OperAssign assign[rhs] => Expression {
 			span: span!(),
 			node: Expr::Assign(Box::new(lhs), Box::new(rhs)),
 		},
@@ -256,7 +278,7 @@ parser! {
 
 		Integer(i) => Expression {
 			span: span!(),
-			node: Expr::Literal(i),
+			node: Expr::Integer(i),
 		},
 
 		atom[lhs] LParen param_list[rhs] RParen => Expression {
@@ -288,12 +310,12 @@ pub fn parse<I: Iterator<Item = (Token, Span)>>(i: I) -> Result<Program, (Option
 #[cfg(debug_assertions)] use regex::Regex;
 #[cfg(debug_assertions)] use colored::Colorize;
 #[cfg(debug_assertions)]
-pub fn pretty(ast: Option<Program>) -> String {
+pub fn pretty(ast: &Program) -> String {
 	let fluff = Regex::new(r"\n *[\)\}\]],?").unwrap();
 	let spans = Regex::new(r"\n *(lo|hi)").unwrap();
 	let other = Regex::new(r"((Literal|Var)\()\n *([^\n]+)").unwrap();
 
-	let text = format!("{:#?}", ast.unwrap()).replace("    ", "  ");
+	let text = format!("{:#?}", ast).replace("    ", "  ");
 
 	let s1 = fluff.replace_all(&text, "");
 	let s2 = spans.replace_all(&s1, " $1");

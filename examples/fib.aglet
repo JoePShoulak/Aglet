@@ -7,6 +7,6 @@ funk fib(n: int) -> int {
 }
 
 funk main() -> void {
-	let total: int = fib(5);
+	set total = fib(5);
 	print(total);
 }

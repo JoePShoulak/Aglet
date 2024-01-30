@@ -82,7 +82,7 @@ lexer! {
 
 	//Values
 	"[a-zA-Z_][a-zA-Z_0-9]*" => Token::Identifier(text.to_owned()),
-	"[0-9]+" => Token::Integer(text.parse().unwrap()),
+	"[0-9][0-9_]*" => Token::Integer(text.replace("_", "").parse().unwrap()),
 
 	//Language Structures
 	"\\(" => Token::LParen,
@@ -118,13 +118,11 @@ lexer! {
 pub struct Lexer<'a> {
 	original: &'a str,
 	remaining: &'a str,
-	context: message::Context<'a>,
+	context: &'a message::Context<'a>,
 }
 
 impl<'a> Lexer<'a> {
-	pub fn new(context: message::Context<'a>) -> Lexer<'a> {
-
-
+	pub fn new(context: &'a message::Context) -> Lexer<'a> {
 		Lexer {
 			original: context.source,
 			remaining: context.source,

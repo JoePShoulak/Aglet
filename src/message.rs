@@ -55,12 +55,42 @@ pub fn error(text: String, span: Option<Span>, context: Option<&Context>) {
 	print_message(format!("{}: {}", "error".red().bold(), text.bold()), span, context);
 }
 
-pub fn warn(text: String, span: Option<Span>, context: Option<&Context>) {
-	print_message(format!("{}: {}", "warn".yellow().bold(), text), span, context);
+pub fn warning(text: String, span: Option<Span>, context: Option<&Context>) {
+	print_message(format!("{}: {}", "warning".yellow().bold(), text.bold()), span, context);
 }
 
 pub fn hint(text: String, span: Option<Span>, context: Option<&Context>) {
-	print_message(format!("{}: {}", "hint".bright_blue().bold(), text), span, context);
+	match context {
+		Some(ctx) => {
+			match span {
+				Some(span) => {
+					let before = &ctx.source[0..span.lo];
+					let line_begin = (1 + {
+						let mut ix = -1;
+						for (index, c) in before.char_indices().rev() {
+							if c == '\n' {
+								ix = index as isize;
+								break;
+							}
+						}
+						ix
+					}) as usize;
+
+					let col_no = span.lo - line_begin;
+
+					//If hint is related to a previous message, print it differently
+					eprintln!("   {} {}{} {}", "|".bright_blue().bold(), " ".repeat(col_no), "∟".bright_blue().bold(), text);
+				},
+
+				None => {
+					print_message(format!("   {} {}: {}", "=".bright_blue().bold(), "hint".bold(), text), span, context);
+				},
+			}
+		},
+		None => {
+			print_message(format!("   {} {}: {}", "=".bright_blue().bold(), "hint".bold(), text), span, context);
+		},
+	}
 }
 
 pub fn info(text: &str) {
@@ -69,6 +99,10 @@ pub fn info(text: &str) {
 
 pub fn errored() -> bool {
 	*DID_ERROR.lock().unwrap()
+}
+
+pub fn context(span: Span, context: &Context) {
+	print_context(Some(context.filename), context.source, span);
 }
 
 fn print_context(filename: Option<&String>, full_text: &String, span: Span) {
@@ -108,8 +142,28 @@ fn print_context(filename: Option<&String>, full_text: &String, span: Span) {
 		}
 	}
 
-	//Print the line in question and highlight what element is being referred to.
+	//Print the lines in question and highlight what element is being referred to.
 	eprintln!("   {}", "|".bright_blue().bold());
-	eprintln!("{:<3}{} {}", format!("{}", line_no).bright_blue().bold(), "|".bright_blue().bold(), &full_text[line_begin ..= line_end]);
-	eprintln!("   {} {}{}", "|".bright_blue().bold(), " ".repeat(span.lo - line_begin), "^".repeat(span.hi - span.lo).bright_blue().bold());
+
+	let lines: Vec<&str> = full_text[line_begin ..= line_end].lines().collect();
+	let total = lines.len();
+	let mut ct = 0;
+	let mut max_len = 1;
+	for line in lines {
+		if ct == 0 || ct == total - 1 {
+			eprintln!("{:<3}{} {}", format!("{}", line_no + ct).bright_blue().bold(), "|".bright_blue().bold(), line);
+			max_len = std::cmp::max(max_len, line.len()-1);
+		}
+		if ct == 1 && total > 2 {
+			eprintln!("   {}", "|    ...".bright_blue().bold());
+		}
+		ct += 1;
+	}
+
+	if ct == 1 {
+		eprintln!("   {} {}{}", "|".bright_blue().bold(), " ".repeat(span.lo - line_begin), "^".repeat(span.hi - span.lo).bright_blue().bold());
+	} else {
+		eprintln!("   {} {}{}", "|".bright_blue().bold(), " ".repeat(span.lo - line_begin), "^".repeat(max_len).bright_blue().bold());
+	}
+
 }
