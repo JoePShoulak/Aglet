@@ -9,6 +9,11 @@ pub mod message;
 mod flags;
 
 fn main() -> ExitCode {
+	//Disable colors globally if stderr or stdout are not TTY
+	if !atty::is(atty::Stream::Stdout) || !atty::is(atty::Stream::Stderr) {
+		colored::control::set_override(false);
+	}
+
 	let options = flags::read();
 
 	//Read input file
