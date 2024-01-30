@@ -76,6 +76,12 @@ impl Statement {
 
 				if body.stmts.len() > 0 {
 					analyzer.push_scope();
+
+					//Declare variables in scope. We may want to allow them to be mutable? For now they are immutable
+					for param in params.iter() {
+						analyzer.set_variable(&param.name, &param.datatype, false, param.span);
+					}
+
 					body.analyze(analyzer);
 					analyzer.pop_scope();
 				}

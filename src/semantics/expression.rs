@@ -200,7 +200,7 @@ impl Expression {
 							Some(var) => {
 								if expr_type != var_type {
 									message::context(var.span, analyzer.context);
-									message::hint(format!("Variable `{}` was declared here", id), Some(var.span), Some(analyzer.context));
+									message::hint(format!("Variable `{}` was declared as type `{}` here", id, var_type), Some(var.span), Some(analyzer.context));
 								}
 
 								if !var.mutable {
