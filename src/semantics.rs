@@ -1,6 +1,7 @@
 use crate::message::Context;
 use crate::parser::ast::Program;
 use std::collections::HashMap;
+use crate::lexer::Span;
 
 mod program;
 mod statement;
@@ -14,6 +15,7 @@ pub struct FuncSig {
 pub struct VarSig {
 	data_type: String,
 	mutable: bool,
+	span: Span,
 }
 
 impl std::fmt::Display for FuncSig {
@@ -42,13 +44,16 @@ pub struct Analyzer<'a> {
 }
 
 impl<'a> Analyzer<'a> {
+	const INT: &'static str = "int";
+	const VOID: &'static str = "void";
+
 	pub fn run(ast: &Program, context: &'a Context) -> Analyzer<'a> {
 		let mut analyzer = Analyzer {
 			context: context,
 			scopes: vec![Scope::new()],
 		};
 
-		analyzer.set_function(&String::from("print"), vec![String::from("int")], &String::from("void"));
+		analyzer.set_function(&String::from("print"), vec![Analyzer::INT.to_string()], Analyzer::VOID);
 
 		ast.analyze(&mut analyzer);
 		analyzer
@@ -74,7 +79,7 @@ impl<'a> Analyzer<'a> {
 		return None;
 	}
 
-	pub fn set_function(&mut self, name: &String, params: Vec<String>, return_type: &String) {
+	pub fn set_function(&mut self, name: &String, params: Vec<String>, return_type: &str) {
 		let scope = self.scopes.last_mut().unwrap();
 		scope.functions.insert(name.to_string(), FuncSig {
 			return_type: return_type.to_string(),
@@ -86,15 +91,30 @@ impl<'a> Analyzer<'a> {
 		["int", "void"].iter().any(|&s| s == return_type)
 	}
 
-	pub fn get_variable(&self, name: &String) -> Option<&VarSig> {
-		self.scopes.last().unwrap().variables.get(name)
+	pub fn get_variable(&self, name: &String, all_scopes: bool) -> Option<&VarSig> {
+		if all_scopes {
+			for scope in &self.scopes {
+				let var = scope.variables.get(name);
+				match var {
+					None => {},
+					_ => { return var; },
+				}
+			}
+			None
+		} else {
+			self.scopes.last().unwrap().variables.get(name)
+		}
 	}
 
-	pub fn set_variable(&mut self, name: &String, data_type: &String, mutable: bool) {
+	pub fn set_variable(&mut self, name: &String, data_type: &str, mutable: bool, span: Span) {
 		let scope = self.scopes.last_mut().unwrap();
 		scope.variables.insert(name.to_string(), VarSig {
 			data_type: data_type.to_string(),
 			mutable: mutable,
+			span: Span {
+				lo: span.lo,
+				hi: span.hi,
+			},
 		});
 	}
 

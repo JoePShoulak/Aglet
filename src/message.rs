@@ -101,6 +101,10 @@ pub fn errored() -> bool {
 	*DID_ERROR.lock().unwrap()
 }
 
+pub fn context(span: Span, context: &Context) {
+	print_context(Some(context.filename), context.source, span);
+}
+
 fn print_context(filename: Option<&String>, full_text: &String, span: Span) {
 	let before = &full_text[0..span.lo];
 	let after = &full_text[span.hi..full_text.len()];

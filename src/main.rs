@@ -7,7 +7,6 @@ mod semantics;
 
 pub mod message;
 mod flags;
-mod types;
 
 fn main() -> ExitCode {
 	let options = flags::read();
