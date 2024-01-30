@@ -102,7 +102,17 @@ impl Statement {
 					body.analyze(analyzer);
 
 					analyzer.func_stack.pop();
-					analyzer.pop_scope();
+					let scope = analyzer.pop_scope();
+
+					//Check for any mutable variables that don't have to be
+					for (name, signature) in scope.variables {
+						if signature.used == 0 && !name.starts_with("_") {
+							message::warning(format!("Variable `{name}` is never used. If this is intentional, prefix the variable name with an underscore (e.g. `_{name}`)"), Some(signature.span), Some(analyzer.context));
+						}
+						if signature.mutable && signature.changed == 0 {
+							message::warning(format!("Variable `{name}` does not need to be mutable. Consider replacing `let` with `set`"), Some(signature.span), Some(analyzer.context));
+						}
+					}
 				}
 			},
 
@@ -118,6 +128,7 @@ impl Statement {
 
 						message::context(var.span, analyzer.context);
 						message::hint("But it was already declared here".to_string(), Some(var.span), Some(analyzer.context));
+						return;
 					},
 				}
 

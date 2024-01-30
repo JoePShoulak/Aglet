@@ -177,7 +177,9 @@ impl Expression {
 						Analyzer::INT.to_string()
 					},
 					Some(var) => {
-						var.data_type.clone()
+						let ret = var.data_type.clone();
+						analyzer.use_variable(name);
+						ret
 					},
 				}
 			},
@@ -208,7 +210,9 @@ impl Expression {
 									message::context(var.span, analyzer.context);
 									message::hint(format!("Variable `{}` was declared as immutable here", id), Some(var.span), Some(analyzer.context));
 								}
-								var.data_type.clone()
+								let ret = var.data_type.clone();
+								analyzer.change_variable(id);
+								ret
 							},
 						}
 					},

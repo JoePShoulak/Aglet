@@ -16,6 +16,8 @@ pub struct VarSig {
 	data_type: String,
 	mutable: bool,
 	span: Span,
+	used: i64,
+	changed: i64,
 }
 
 impl std::fmt::Display for FuncSig {
@@ -65,8 +67,8 @@ impl<'a> Analyzer<'a> {
 		self.scopes.push(Scope::new());
 	}
 
-	pub fn pop_scope(&mut self) {
-		self.scopes.pop();
+	pub fn pop_scope(&mut self) -> Scope {
+		self.scopes.pop().unwrap()
 	}
 
 	pub fn get_function(&self, name: &String) -> Option<&FuncSig> {
@@ -126,7 +128,29 @@ impl<'a> Analyzer<'a> {
 				lo: span.lo,
 				hi: span.hi,
 			},
+			used: 0,
+			changed: 0,
 		});
+	}
+
+	pub fn change_variable(&mut self, name: &String) {
+		for scope in &mut self.scopes {
+			let var = scope.variables.get_mut(name);
+			match var {
+				None => {},
+				Some(value) => { value.changed += 1; },
+			}
+		}
+	}
+
+	pub fn use_variable(&mut self, name: &String) {
+		for scope in &mut self.scopes {
+			let var = scope.variables.get_mut(name);
+			match var {
+				None => {},
+				Some(value) => { value.used += 1; },
+			}
+		}
 	}
 
 	pub fn valid_data_type(&self, data_type: &String) -> bool {
