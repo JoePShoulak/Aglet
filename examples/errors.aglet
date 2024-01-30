@@ -1,0 +1,5 @@
+funk main() -> int {
+	set a: int = a + 1000000;
+	let b: void = 3;
+	a = b = 4;
+}

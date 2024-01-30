@@ -196,7 +196,7 @@ parser! {
 
 	//Assignment (lowest precedence)
 	assign: Expression {
-		assign[lhs] OperAssign compare[rhs] => Expression {
+		compare[lhs] OperAssign assign[rhs] => Expression {
 			span: span!(),
 			node: Expr::Assign(Box::new(lhs), Box::new(rhs)),
 		},
