@@ -107,34 +107,42 @@ impl Statement {
 			},
 
 			VarDecl(qualifiers, name, datatype, value) => {
-				value.analyze(analyzer);
+				let deduced_type = value.analyze(analyzer);
+
+				match analyzer.get_variable(&name.value, false) {
+					None => {},
+					Some(var) => {
+						//Do we want to allow redeclaration of variables in the same scope? Disallow for now.
+						message::error(format!("Redeclaration of variable `{}`", name.value), Some(name.span), Some(analyzer.context));
+						message::hint(format!("Variable `{}` declared here", name.value), Some(name.span), Some(analyzer.context));
+
+						message::context(var.span, analyzer.context);
+						message::hint("But it was already declared here".to_string(), Some(var.span), Some(analyzer.context));
+					},
+				}
+
+				let mutable = match qualifiers[0] {
+					Mutable => true,
+					Immutable => false,
+				};
 
 				match **datatype {
 					None => {
-						//In the future, type deduction would be nice. For now, throw an error.
-						message::error(format!("Variable `{}` must have a type", name.value), Some(name.span), Some(analyzer.context));
+						//Deduce the type from the expression.
+
+						if !analyzer.valid_data_type(&deduced_type) {
+							message::error(format!("Cannot assign `{}` value to variable `{}`: invalid data type", deduced_type, name.value), Some(value.span), Some(analyzer.context));
+							self.hint_function_signature(value, analyzer);
+						}
+						analyzer.set_variable(&name.value, &deduced_type, mutable, name.span);
 					},
 					Some(ref data_type) => {
 						if !analyzer.valid_data_type(&data_type.value) {
 							message::error(format!("Unknown data type `{}`. Only `{}` is supported at this time", data_type.value, Analyzer::INT), Some(data_type.span), Some(analyzer.context));
+						} else if deduced_type != data_type.value {
+							message::error(format!("Cannot assign `{}` value to variable `{}` of type `{}`: incompatible types", deduced_type, name.value, data_type.value), Some(value.span), Some(analyzer.context));
+							self.hint_function_signature(value, analyzer);
 						}
-
-						match analyzer.get_variable(&name.value, false) {
-							None => {},
-							Some(var) => {
-								//Do we want to allow redeclaration of variables in the same scope? Disallow for now.
-								message::error(format!("Redeclaration of variable `{}`", name.value), Some(name.span), Some(analyzer.context));
-								message::hint(format!("Variable `{}` declared here", name.value), Some(name.span), Some(analyzer.context));
-
-								message::context(var.span, analyzer.context);
-								message::hint("But it was already declared here".to_string(), Some(var.span), Some(analyzer.context));
-							},
-						}
-
-						let mutable = match qualifiers[0] {
-							Mutable => true,
-							Immutable => false,
-						};
 
 						analyzer.set_variable(&name.value, &data_type.value, mutable, name.span);
 					},
