@@ -28,6 +28,22 @@ impl Statement {
 	}
 
 	pub fn analyze(&self, analyzer: &mut Analyzer) {
+		//Make sure everything is in the correct scope
+		match &self.node {
+			FuncDecl(_, _, _, _) => {
+				if analyzer.func_stack.len() > 0 {
+					message::error("Functions cannot be declared inside other functions".to_string(), Some(self.span), Some(analyzer.context));
+				}
+			},
+			_ => {
+				if analyzer.func_stack.len() == 0 {
+					message::error("This statement must be inside a function".to_string(), Some(self.span), Some(analyzer.context));
+					return;
+				}
+			},
+		}
+
+
 		match &self.node {
 			ExprStmt(expr) => {
 				expr.analyze(analyzer);
@@ -76,6 +92,7 @@ impl Statement {
 
 				if body.stmts.len() > 0 {
 					analyzer.push_scope();
+					analyzer.func_stack.push(name.value.clone());
 
 					//Declare variables in scope. We may want to allow them to be mutable? For now they are immutable
 					for param in params.iter() {
@@ -83,6 +100,8 @@ impl Statement {
 					}
 
 					body.analyze(analyzer);
+
+					analyzer.func_stack.pop();
 					analyzer.pop_scope();
 				}
 			},
@@ -123,13 +142,26 @@ impl Statement {
 			},
 
 			ReturnStmt(expr) => {
+				//At this point, we know that return statements will be inside a function.
+				let (func, name) = analyzer.get_current_function().unwrap();
+
 				match **expr {
-					None => {},
+					None => {
+						if func.return_type != Analyzer::VOID {
+							message::error(format!("Return statement must have a value"), Some(self.span), Some(analyzer.context));
+							message::hint(format!("Function `{}` requires a return value of type `{}`", name, func.return_type), None, None);
+						}
+					},
 					Some(ref expr) => {
-						let expr_type = expr.analyze(analyzer);
-						if expr_type == Analyzer::VOID {
-							message::error("Expression does not return a value".to_string(), Some(expr.span), Some(analyzer.context));
-							self.hint_function_signature(expr, analyzer);
+						if func.return_type == Analyzer::VOID {
+							message::error(format!("Return statement cannot have a value"), Some(self.span), Some(analyzer.context));
+							message::hint(format!("Function `{}` does not return anything", name), None, None);
+						} else {
+							let expr_type = expr.analyze(analyzer);
+							if expr_type == Analyzer::VOID {
+								message::error("Expression does not return a value".to_string(), Some(expr.span), Some(analyzer.context));
+								self.hint_function_signature(expr, analyzer);
+							}
 						}
 					}
 				}

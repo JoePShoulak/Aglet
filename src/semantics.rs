@@ -41,6 +41,7 @@ impl Scope {
 pub struct Analyzer<'a> {
 	context: &'a Context<'a>,
 	scopes: Vec<Scope>,
+	func_stack: Vec<String>,
 }
 
 impl<'a> Analyzer<'a> {
@@ -51,6 +52,7 @@ impl<'a> Analyzer<'a> {
 		let mut analyzer = Analyzer {
 			context: context,
 			scopes: vec![Scope::new()],
+			func_stack: vec![],
 		};
 
 		analyzer.set_function(&String::from("print"), vec![Analyzer::INT.to_string()], Analyzer::VOID);
@@ -77,6 +79,15 @@ impl<'a> Analyzer<'a> {
 		}
 
 		return None;
+	}
+
+	pub fn get_current_function(&self) -> Option<(&FuncSig, &String)> {
+		match self.func_stack.last() {
+			None => { None },
+			Some(func) => {
+				Some((self.get_function(func).unwrap(), func))
+			},
+		}
 	}
 
 	pub fn set_function(&mut self, name: &String, params: Vec<String>, return_type: &str) {
