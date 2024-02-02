@@ -1,11 +1,8 @@
-# Aglet - Another Great Language Executing Things
+# Aglet - A modern language for an old chip.
+
+AGLET is just Another Great Language Executing Things.
+It is very much in its infancy right now, but when complete it will target 6502 assembly.
 
 To build, run `cargo build`. Alternately, to build and run, `cargo run`.
 
-The only dependency is [Plex](https://github.com/goffrie/plex), for generating the parser. `cargo build` will automatically pull this in.
-
-### TO DO:
-code style
-- naming conventions (probably stick with how other rustaceans do)
-- tabs vs spaces?
-- open brace on same line or next line?
+Be sure to check out the examples/ folder for some sample programs.
