@@ -27,7 +27,7 @@ impl Statement {
 		}
 	}
 
-	pub fn analyze(&self, analyzer: &mut Analyzer) {
+	pub fn analyze(&self, analyzer: &mut Analyzer) -> bool {
 		//Make sure everything is in the correct scope
 		match &self.node {
 			FuncDecl(_, _, _, _) => {
@@ -38,7 +38,7 @@ impl Statement {
 			_ => {
 				if analyzer.func_stack.len() == 0 {
 					message::error("This statement must be inside a function".to_string(), Some(self.span), Some(analyzer.context));
-					return;
+					return false;
 				}
 			},
 		}
@@ -90,29 +90,32 @@ impl Statement {
 					}
 				}
 
-				if body.stmts.len() > 0 {
-					analyzer.push_scope();
-					analyzer.func_stack.push(name.value.clone());
+				//Analyze the function body
+				analyzer.push_scope();
+				analyzer.func_stack.push(name.value.clone());
 
-					//Declare variables in scope. We may want to allow them to be mutable? For now they are immutable
-					for param in params.iter() {
-						analyzer.set_variable(&param.name, &param.datatype, false, param.span);
+				//Declare variables in scope. We may want to allow them to be mutable? For now they are immutable
+				for param in params.iter() {
+					analyzer.set_variable(&param.name, &param.datatype, false, param.span);
+				}
+
+				let return_guaranteed = body.analyze(analyzer);
+
+				analyzer.func_stack.pop();
+				let scope = analyzer.pop_scope();
+
+				//Check for any mutable variables that don't have to be
+				for (name, signature) in scope.variables {
+					if signature.used == 0 && !name.starts_with("_") {
+						message::warning(format!("Variable `{name}` is never used. If this is intentional, prefix the variable name with an underscore (e.g. `_{name}`)"), Some(signature.span), Some(analyzer.context));
 					}
-
-					body.analyze(analyzer);
-
-					analyzer.func_stack.pop();
-					let scope = analyzer.pop_scope();
-
-					//Check for any mutable variables that don't have to be
-					for (name, signature) in scope.variables {
-						if signature.used == 0 && !name.starts_with("_") {
-							message::warning(format!("Variable `{name}` is never used. If this is intentional, prefix the variable name with an underscore (e.g. `_{name}`)"), Some(signature.span), Some(analyzer.context));
-						}
-						if signature.mutable && signature.changed == 0 {
-							message::warning(format!("Variable `{name}` does not need to be mutable. Consider replacing `let` with `set`"), Some(signature.span), Some(analyzer.context));
-						}
+					if signature.mutable && signature.changed == 0 {
+						message::warning(format!("Variable `{name}` does not need to be mutable. Consider replacing `let` with `set`"), Some(signature.span), Some(analyzer.context));
 					}
+				}
+
+				if return_type.value != Analyzer::VOID  && !return_guaranteed {
+					message::error(format!("Function `{}` might not return a value. A value of type `{}` must always be returned", name.value, return_type.value), Some(self.span), Some(analyzer.context));
 				}
 			},
 
@@ -128,7 +131,7 @@ impl Statement {
 
 						message::context(var.span, analyzer.context);
 						message::hint("But it was already declared here".to_string(), Some(var.span), Some(analyzer.context));
-						return;
+						return false;
 					},
 				}
 
@@ -184,6 +187,8 @@ impl Statement {
 						}
 					}
 				}
+
+				return true;
 			}
 
 			IfStmt(condition, stmts_true, stmts_false) => {
@@ -193,15 +198,12 @@ impl Statement {
 					self.hint_function_signature(condition, analyzer);
 				}
 
-				for stmt in &stmts_true.stmts {
-					stmt.analyze(analyzer);
-				}
-
-				for stmt in &stmts_false.stmts {
-					stmt.analyze(analyzer);
-				}
+				//If statements are only guaranteed to return if all the branches are also guaranteed to return.
+				return stmts_true.analyze(analyzer) && stmts_false.analyze(analyzer);
 			}
 
 		}
+
+		return false;
 	}
 }
