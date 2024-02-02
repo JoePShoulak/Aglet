@@ -44,6 +44,7 @@ pub struct Analyzer<'a> {
 	context: &'a Context<'a>,
 	scopes: Vec<Scope>,
 	func_stack: Vec<String>,
+	loops: i64,
 }
 
 impl<'a> Analyzer<'a> {
@@ -55,6 +56,7 @@ impl<'a> Analyzer<'a> {
 			context: context,
 			scopes: vec![Scope::new()],
 			func_stack: vec![],
+			loops: 0,
 		};
 
 		analyzer.set_function(&String::from("print"), vec![Analyzer::INT.to_string()], Analyzer::VOID);

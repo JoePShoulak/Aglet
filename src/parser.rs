@@ -20,6 +20,9 @@ pub mod ast {
 		ReturnStmt(Box<Option<Expression>>),
 		IfStmt(Box<Expression>, Box<Program>, Box<Program>),
 		VarDecl(Box<Vec<Qualifier>>, Box<Ident>, Box<Option<Ident>>, Box<Expression>),
+		WhileStmt(Box<Expression>, Box<Program>),
+		BreakStmt,
+		ContinueStmt,
 	}
 
 	#[derive(Debug)]
@@ -146,6 +149,21 @@ parser! {
 		KwdIf assign[e] LBrace program[p] RBrace => Statement {
 			span: span!(),
 			node: Stmt::IfStmt(Box::new(e), Box::new(p), Box::new(Program{stmts: vec![]})),
+		},
+
+		KwdWhile assign[e] LBrace program[p] RBrace => Statement {
+			span: span!(),
+			node: Stmt::WhileStmt(Box::new(e), Box::new(p)),
+		},
+
+		KwdBreak Semicolon => Statement {
+			span: span!(),
+			node: Stmt::BreakStmt,
+		},
+
+		KwdContinue Semicolon => Statement {
+			span: span!(),
+			node: Stmt::ContinueStmt,
 		},
 
 		//Variable declaration without a specified type.

@@ -199,9 +199,42 @@ impl Statement {
 				}
 
 				//If statements are only guaranteed to return if all the branches are also guaranteed to return.
-				return stmts_true.analyze(analyzer) && stmts_false.analyze(analyzer);
+				analyzer.push_scope();
+				let true_branch = stmts_true.analyze(analyzer);
+				analyzer.pop_scope();
+				analyzer.push_scope();
+				let false_branch = stmts_false.analyze(analyzer);
+				analyzer.pop_scope();
+				return true_branch && false_branch;
 			}
 
+			WhileStmt(condition, stmts) => {
+				let expr_type = condition.analyze(analyzer);
+				if expr_type == Analyzer::VOID {
+					message::error("Expression does not return a value".to_string(), Some(condition.span), Some(analyzer.context));
+					self.hint_function_signature(condition, analyzer);
+				}
+
+				analyzer.push_scope();
+				analyzer.loops += 1;
+				stmts.analyze(analyzer);
+				analyzer.loops -= 1;
+				analyzer.pop_scope();
+
+				//Note: while loops are never really guaranteed to run. they might not.
+			},
+
+			BreakStmt => {
+				if analyzer.loops == 0 {
+					message::error("Statement `break` must be inside a loop".to_string(), Some(self.span), Some(analyzer.context));
+				}
+			},
+
+			ContinueStmt => {
+				if analyzer.loops == 0 {
+					message::error("Statement `continue` must be inside a loop".to_string(), Some(self.span), Some(analyzer.context));
+				}
+			},
 		}
 
 		return false;
