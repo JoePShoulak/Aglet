@@ -184,45 +184,12 @@ impl Expression {
 				}
 			},
 
-			Assign(variable, expr) => {
-				let expr_type = expr.analyze(analyzer);
-				let var_type = variable.analyze(analyzer);
-
-				if expr_type != var_type {
-					message::error(format!("Cannot assign value of type `{}` to `{}`: incompatible types", expr_type, var_type), Some(expr.span), Some(analyzer.context));
-				}
-
-				match &variable.node {
-					Var(id) => {
-						match analyzer.get_variable(&id, true) {
-							None => {
-								message::error(format!("Use of undeclared variable `{}`", id), Some(self.span), Some(analyzer.context));
-								Analyzer::INT.to_string()
-							},
-							Some(var) => {
-								if expr_type != var_type {
-									message::context(var.span, analyzer.context);
-									message::hint(format!("Variable `{}` was declared as type `{}` here", id, var_type), Some(var.span), Some(analyzer.context));
-								}
-
-								if !var.mutable {
-									message::error(format!("Cannot assign a value to immutable variable `{}`", id), Some(self.span), Some(analyzer.context));
-									message::context(var.span, analyzer.context);
-									message::hint(format!("Variable `{}` was declared as immutable here", id), Some(var.span), Some(analyzer.context));
-								}
-								let ret = var.data_type.clone();
-								analyzer.change_variable(id);
-								ret
-							},
-						}
-					},
-					_ => {
-						message::error("Indirect variable assignments are not supported yet".to_string(), Some(variable.span), Some(analyzer.context));
-						Analyzer::INT.to_string()
-					}
-				}
-			},
-
+			Assign(variable, expr) => { self.analyze_assign(analyzer, variable, expr) },
+			AddAssign(variable, expr) => { self.analyze_assign(analyzer, variable, expr) },
+			SubAssign(variable, expr) => { self.analyze_assign(analyzer, variable, expr) },
+			MulAssign(variable, expr) => { self.analyze_assign(analyzer, variable, expr) },
+			DivAssign(variable, expr) => { self.analyze_assign(analyzer, variable, expr) },
+			ModAssign(variable, expr) => { self.analyze_assign(analyzer, variable, expr) },
 		}
 	}
 }

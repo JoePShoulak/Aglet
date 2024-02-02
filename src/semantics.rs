@@ -6,6 +6,7 @@ use crate::lexer::Span;
 mod program;
 mod statement;
 mod expression;
+mod assign;
 
 pub struct FuncSig {
 	return_type: String,

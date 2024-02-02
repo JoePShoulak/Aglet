@@ -57,6 +57,11 @@ pub enum Token {
 	OperGreaterOrEqual,
 	OperEqual,
 	OperNotEqual,
+	OperPlusAssign,
+	OperMinusAssign,
+	OperMultAssign,
+	OperDivAssign,
+	OperModAssign,
 }
 
 lexer! {
@@ -116,6 +121,11 @@ lexer! {
 	">=" => Token::OperGreaterOrEqual,
 	"==" => Token::OperEqual,
 	"!=" => Token::OperNotEqual,
+	"\\+=" => Token::OperPlusAssign,
+	"-=" => Token::OperMinusAssign,
+	"\\*=" => Token::OperMultAssign,
+	"/=" => Token::OperDivAssign,
+	"%=" => Token::OperModAssign,
 
 	//If none of the above, raise an error!
 	"." => Token::Unknown(text.to_owned()),

@@ -51,6 +51,11 @@ pub mod ast {
 
 		//Misc
 		Assign(Box<Expression>, Box<Expression>),
+		AddAssign(Box<Expression>, Box<Expression>),
+		SubAssign(Box<Expression>, Box<Expression>),
+		MulAssign(Box<Expression>, Box<Expression>),
+		DivAssign(Box<Expression>, Box<Expression>),
+		ModAssign(Box<Expression>, Box<Expression>),
 
 		Var(String),
 		Integer(i64),
@@ -217,6 +222,26 @@ parser! {
 		compare[lhs] OperAssign assign[rhs] => Expression {
 			span: span!(),
 			node: Expr::Assign(Box::new(lhs), Box::new(rhs)),
+		},
+		compare[lhs] OperPlusAssign assign[rhs] => Expression {
+			span: span!(),
+			node: Expr::AddAssign(Box::new(lhs), Box::new(rhs)),
+		},
+		compare[lhs] OperMinusAssign assign[rhs] => Expression {
+			span: span!(),
+			node: Expr::SubAssign(Box::new(lhs), Box::new(rhs)),
+		},
+		compare[lhs] OperMultAssign assign[rhs] => Expression {
+			span: span!(),
+			node: Expr::MulAssign(Box::new(lhs), Box::new(rhs)),
+		},
+		compare[lhs] OperDivAssign assign[rhs] => Expression {
+			span: span!(),
+			node: Expr::DivAssign(Box::new(lhs), Box::new(rhs)),
+		},
+		compare[lhs] OperModAssign assign[rhs] => Expression {
+			span: span!(),
+			node: Expr::ModAssign(Box::new(lhs), Box::new(rhs)),
 		},
 		compare[x] => x,
 	}
