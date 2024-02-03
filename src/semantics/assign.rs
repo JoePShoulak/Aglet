@@ -9,7 +9,7 @@ impl Expression {
 		let var_type = variable.analyze(analyzer);
 
 		if expr_type != var_type {
-			message::error(format!("Cannot mutate value of type `{}` to `{}`: incompatible types", expr_type, var_type), Some(expr.span), Some(analyzer.context));
+			message::error(format!("Cannot assign value of type `{}` to `{}`: incompatible types", expr_type, var_type), Some(expr.span), Some(analyzer.context));
 		}
 
 		match &variable.node {
