@@ -53,6 +53,7 @@ pub struct Analyzer<'a> {
 impl<'a> Analyzer<'a> {
 	const INT: &'static str = "int";
 	const VOID: &'static str = "void";
+	const FUNC_MAIN: &'static str = "main";
 
 	pub fn run(ast: &Program, context: &'a Context, flags: &'a Options) -> Analyzer<'a> {
 		let mut analyzer = Analyzer {

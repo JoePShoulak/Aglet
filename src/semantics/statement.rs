@@ -64,7 +64,7 @@ impl Statement {
 					message::error(format!("Unknown return type `{}`. Valid types are `{}` or `{}`", return_type.value, Analyzer::INT, Analyzer::VOID), Some(return_type.span), Some(analyzer.context));
 				}
 
-				if name.value == "main" {
+				if name.value == Analyzer::FUNC_MAIN {
 					//Force the main() function to have a specific signature
 					if params.len() > 0 || return_type.value != Analyzer::VOID {
 						let span = if params.len() > 0 && return_type.value != Analyzer::VOID {
@@ -118,7 +118,7 @@ impl Statement {
 					}
 				}
 
-				if return_type.value != Analyzer::VOID  && !return_guaranteed {
+				if name.value != Analyzer::FUNC_MAIN && return_type.value != Analyzer::VOID  && !return_guaranteed {
 					message::error(format!("Function `{}` might not return a value. A value of type `{}` must always be returned", name.value, return_type.value), Some(self.span), Some(analyzer.context));
 				}
 			},
