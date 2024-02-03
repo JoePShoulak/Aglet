@@ -20,6 +20,9 @@ pub mod ast {
 		ReturnStmt(Box<Option<Expression>>),
 		IfStmt(Box<Expression>, Box<Program>, Box<Program>),
 		VarDecl(Box<Vec<Qualifier>>, Box<Ident>, Box<Option<Ident>>, Box<Expression>),
+		WhileStmt(Box<Expression>, Box<Program>),
+		BreakStmt,
+		ContinueStmt,
 	}
 
 	#[derive(Debug)]
@@ -46,8 +49,13 @@ pub mod ast {
 		Equal(Box<Expression>, Box<Expression>),
 		NotEqual(Box<Expression>, Box<Expression>),
 
-		//Misc
+		//Assignment
 		Assign(Box<Expression>, Box<Expression>),
+		AddAssign(Box<Expression>, Box<Expression>),
+		SubAssign(Box<Expression>, Box<Expression>),
+		MulAssign(Box<Expression>, Box<Expression>),
+		DivAssign(Box<Expression>, Box<Expression>),
+		ModAssign(Box<Expression>, Box<Expression>),
 
 		Var(String),
 		Integer(i64),
@@ -148,6 +156,21 @@ parser! {
 			node: Stmt::IfStmt(Box::new(e), Box::new(p), Box::new(Program{stmts: vec![]})),
 		},
 
+		KwdWhile assign[e] LBrace program[p] RBrace => Statement {
+			span: span!(),
+			node: Stmt::WhileStmt(Box::new(e), Box::new(p)),
+		},
+
+		KwdBreak Semicolon => Statement {
+			span: span!(),
+			node: Stmt::BreakStmt,
+		},
+
+		KwdContinue Semicolon => Statement {
+			span: span!(),
+			node: Stmt::ContinueStmt,
+		},
+
 		//Variable declaration without a specified type.
 		qualifiers[q] ident[name] OperAssign assign[e] Semicolon => Statement {
 			span: span!(),
@@ -199,6 +222,26 @@ parser! {
 		compare[lhs] OperAssign assign[rhs] => Expression {
 			span: span!(),
 			node: Expr::Assign(Box::new(lhs), Box::new(rhs)),
+		},
+		compare[lhs] OperPlusAssign assign[rhs] => Expression {
+			span: span!(),
+			node: Expr::AddAssign(Box::new(lhs), Box::new(rhs)),
+		},
+		compare[lhs] OperMinusAssign assign[rhs] => Expression {
+			span: span!(),
+			node: Expr::SubAssign(Box::new(lhs), Box::new(rhs)),
+		},
+		compare[lhs] OperMultAssign assign[rhs] => Expression {
+			span: span!(),
+			node: Expr::MulAssign(Box::new(lhs), Box::new(rhs)),
+		},
+		compare[lhs] OperDivAssign assign[rhs] => Expression {
+			span: span!(),
+			node: Expr::DivAssign(Box::new(lhs), Box::new(rhs)),
+		},
+		compare[lhs] OperModAssign assign[rhs] => Expression {
+			span: span!(),
+			node: Expr::ModAssign(Box::new(lhs), Box::new(rhs)),
 		},
 		compare[x] => x,
 	}

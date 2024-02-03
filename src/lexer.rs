@@ -15,6 +15,9 @@ pub enum Token {
 	KwdReturn,
 	KwdIf,
 	KwdElse,
+	KwdWhile,
+	KwdBreak,
+	KwdContinue,
 	True,
 	False,
 
@@ -54,6 +57,11 @@ pub enum Token {
 	OperGreaterOrEqual,
 	OperEqual,
 	OperNotEqual,
+	OperPlusAssign,
+	OperMinusAssign,
+	OperMultAssign,
+	OperDivAssign,
+	OperModAssign,
 }
 
 lexer! {
@@ -71,6 +79,9 @@ lexer! {
 	"ret" => Token::KwdReturn,
 	"if" => Token::KwdIf,
 	"else" => Token::KwdElse,
+	"while" => Token::KwdWhile,
+	"break" => Token::KwdBreak,
+	"continue" => Token::KwdContinue,
 	"true" => Token::True,
 	"false" => Token::False,
 
@@ -110,6 +121,11 @@ lexer! {
 	">=" => Token::OperGreaterOrEqual,
 	"==" => Token::OperEqual,
 	"!=" => Token::OperNotEqual,
+	"\\+=" => Token::OperPlusAssign,
+	"-=" => Token::OperMinusAssign,
+	"\\*=" => Token::OperMultAssign,
+	"/=" => Token::OperDivAssign,
+	"%=" => Token::OperModAssign,
 
 	//If none of the above, raise an error!
 	"." => Token::Unknown(text.to_owned()),
