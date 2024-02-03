@@ -49,7 +49,7 @@ pub mod ast {
 		Equal(Box<Expression>, Box<Expression>),
 		NotEqual(Box<Expression>, Box<Expression>),
 
-		//Misc
+		//Assignment
 		Assign(Box<Expression>, Box<Expression>),
 		AddAssign(Box<Expression>, Box<Expression>),
 		SubAssign(Box<Expression>, Box<Expression>),

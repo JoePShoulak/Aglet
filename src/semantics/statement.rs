@@ -107,10 +107,14 @@ impl Statement {
 				//Check for any mutable variables that don't have to be
 				for (name, signature) in scope.variables {
 					if signature.used == 0 && !name.starts_with("_") {
-						message::warning(format!("Variable `{name}` is never used. If this is intentional, prefix the variable name with an underscore (e.g. `_{name}`)"), Some(signature.span), Some(analyzer.context));
+						if !analyzer.flags.warn_suppress {
+							message::warning(format!("Variable `{name}` is never used. If this is intentional, prefix the variable name with an underscore (e.g. `_{name}`)"), Some(signature.span), Some(analyzer.context));
+						}
 					}
 					if signature.mutable && signature.changed == 0 {
-						message::warning(format!("Variable `{name}` does not need to be mutable. Consider replacing `let` with `set`"), Some(signature.span), Some(analyzer.context));
+						if !analyzer.flags.warn_suppress {
+							message::warning(format!("Variable `{name}` does not need to be mutable. Consider replacing `let` with `set`"), Some(signature.span), Some(analyzer.context));
+						}
 					}
 				}
 

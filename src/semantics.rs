@@ -2,6 +2,7 @@ use crate::message::Context;
 use crate::parser::ast::Program;
 use std::collections::HashMap;
 use crate::lexer::Span;
+use crate::flags::Options;
 
 mod program;
 mod statement;
@@ -46,18 +47,20 @@ pub struct Analyzer<'a> {
 	scopes: Vec<Scope>,
 	func_stack: Vec<String>,
 	loops: i64,
+	flags: &'a Options,
 }
 
 impl<'a> Analyzer<'a> {
 	const INT: &'static str = "int";
 	const VOID: &'static str = "void";
 
-	pub fn run(ast: &Program, context: &'a Context) -> Analyzer<'a> {
+	pub fn run(ast: &Program, context: &'a Context, flags: &'a Options) -> Analyzer<'a> {
 		let mut analyzer = Analyzer {
 			context: context,
 			scopes: vec![Scope::new()],
 			func_stack: vec![],
 			loops: 0,
+			flags: flags,
 		};
 
 		analyzer.set_function(&String::from("print"), vec![Analyzer::INT.to_string()], Analyzer::VOID);

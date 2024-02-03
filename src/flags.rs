@@ -9,6 +9,11 @@ pub struct Options {
 	#[structopt(long)]
 	pub ast: bool,
 
+	/// Suppress warnings
+	#[cfg(debug_assertions)]
+	#[structopt(long, short)]
+	pub warn_suppress: bool,
+
 	/// The input file
 	#[structopt(parse(from_os_str))]
 	pub input: PathBuf,

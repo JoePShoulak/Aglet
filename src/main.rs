@@ -67,7 +67,7 @@ fn main() -> ExitCode {
 	}
 
 	message::info("Running semantic analysis...");
-	let _analysis = semantics::Analyzer::run(&ast, &context);
+	let _analysis = semantics::Analyzer::run(&ast, &context, &options);
 
 	if message::errored() {
 		message::abort();
