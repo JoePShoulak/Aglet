@@ -4,6 +4,7 @@ use crate::lexer::Span;
 
 //Thread safety. Not necessary yet but good practice.
 static DID_ERROR: Mutex<bool> = Mutex::new(false);
+pub static LANGUAGE_SERVER: Mutex<bool> = Mutex::new(false);
 
 pub struct Context<'a> {
 	pub filename: &'a String,
@@ -45,6 +46,8 @@ fn print_message(text: String, span: Option<Span>, context: Option<&Context>) {
 }
 
 pub fn abort() {
+	if *LANGUAGE_SERVER.lock().unwrap() { return; }
+
 	eprintln!("{}: {}", "aborted".red().bold(), "Unable to continue due to previous errors".bold());
 }
 
@@ -52,14 +55,44 @@ pub fn error(text: String, span: Option<Span>, context: Option<&Context>) {
 	let mut data = DID_ERROR.lock().unwrap();
 	*data = true;
 
+	if *LANGUAGE_SERVER.lock().unwrap() {
+		match span {
+			None => {},
+			Some(s) => {
+				println!("E|{}|{}|{}", s.lo, s.hi, text.replace("\n", "\\n"));
+			},
+		}
+		return;
+	}
+
 	print_message(format!("{}: {}", "error".red().bold(), text.bold()), span, context);
 }
 
 pub fn warning(text: String, span: Option<Span>, context: Option<&Context>) {
+	if *LANGUAGE_SERVER.lock().unwrap() {
+		match span {
+			None => {},
+			Some(s) => {
+				println!("W|{}|{}|{}", s.lo, s.hi, text.replace("\n", "\\n"));
+			},
+		}
+		return;
+	}
+
 	print_message(format!("{}: {}", "warning".yellow().bold(), text.bold()), span, context);
 }
 
 pub fn hint(text: String, span: Option<Span>, context: Option<&Context>) {
+	if *LANGUAGE_SERVER.lock().unwrap() {
+		match span {
+			None => {},
+			Some(s) => {
+				println!("H|{}|{}|{}", s.lo, s.hi, text.replace("\n", "\\n"));
+			},
+		}
+		return;
+	}
+
 	match context {
 		Some(ctx) => {
 			match span {
@@ -94,6 +127,7 @@ pub fn hint(text: String, span: Option<Span>, context: Option<&Context>) {
 }
 
 pub fn info(text: &str) {
+	if *LANGUAGE_SERVER.lock().unwrap() { return; }
 	eprintln!("{}: {}", "info".bold(), text);
 }
 
@@ -102,6 +136,7 @@ pub fn errored() -> bool {
 }
 
 pub fn context(span: Span, context: &Context) {
+	if *LANGUAGE_SERVER.lock().unwrap() { return; }
 	print_context(Some(context.filename), context.source, span);
 }
 

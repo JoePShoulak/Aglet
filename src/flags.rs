@@ -10,9 +10,12 @@ pub struct Options {
 	pub ast: bool,
 
 	/// Suppress warnings
-	#[cfg(debug_assertions)]
 	#[structopt(long, short)]
 	pub warn_suppress: bool,
+
+	/// Output detailed info in an easy-to-parse format
+	#[structopt(long)]
+	pub language_server: bool,
 
 	/// The input file
 	#[structopt(parse(from_os_str))]

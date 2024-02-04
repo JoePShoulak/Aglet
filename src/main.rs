@@ -16,6 +16,10 @@ fn main() -> ExitCode {
 
 	let options = flags::read();
 
+	if options.language_server {
+		*message::LANGUAGE_SERVER.lock().unwrap() = true;
+	}
+
 	//Read input file
 	let mut s = match fs::read_to_string(&options.input) {
 		Ok(file_contents) => file_contents,
