@@ -1,5 +1,6 @@
 use std::process::ExitCode;
 use std::fs;
+use std::io;
 
 mod lexer;
 mod parser;
@@ -21,17 +22,23 @@ fn main() -> ExitCode {
 	}
 
 	//Read input file
-	let mut s = match fs::read_to_string(&options.input) {
-		Ok(file_contents) => file_contents,
-		Err(error) => {
-			eprintln!("Error reading file {:?}: {}", options.input, error);
-			return ExitCode::FAILURE;
-		}
-	};
+	let mut s = String::new();
+	let filename = if options.input.to_str().unwrap() == "-" {
+		for line in io::stdin().lines() { s += &line.unwrap(); }
+		"stdin"
+	} else {
+		s = match fs::read_to_string(&options.input) {
+			Ok(file_contents) => file_contents,
+			Err(error) => {
+				eprintln!("Error reading file {:?}: {}", options.input, error);
+				return ExitCode::FAILURE;
+			}
+		};
+		options.input.to_str().unwrap()
+	}.to_string();
 
 	s = s.replace("\t", " "); //For formatting reasons, replace all tabs with spaces.
 
-	let filename = options.input.to_str().unwrap().to_string();
 	let context = message::Context { filename: &filename, source: &s };
 
 	//Create lexer (iterator), with debug info for each token read
