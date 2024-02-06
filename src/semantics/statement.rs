@@ -175,13 +175,13 @@ impl Statement {
 					None => {
 						if func.return_type != Analyzer::VOID {
 							message::error(format!("Return statement must have a value"), Some(self.span), Some(analyzer.context));
-							message::hint(format!("Function `{}` requires a return value of type `{}`", name, func.return_type), None, None);
+							message::hint(format!("Function signature is `{}{}`", name, func), Some(self.span), Some(analyzer.context));
 						}
 					},
 					Some(ref expr) => {
 						if func.return_type == Analyzer::VOID {
-							message::error(format!("Return statement cannot have a value"), Some(self.span), Some(analyzer.context));
-							message::hint(format!("Function `{}` does not return anything", name), None, None);
+							message::error(format!("Return statement cannot have a value"), Some(expr.span), Some(analyzer.context));
+							message::hint(format!("Function signature is `{}{}`", name, func), Some(expr.span), Some(analyzer.context));
 						} else {
 							let expr_type = expr.analyze(analyzer);
 							if expr_type == Analyzer::VOID {
