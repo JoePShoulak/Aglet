@@ -324,6 +324,16 @@ parser! {
 			node: Expr::Integer(i),
 		},
 
+		True => Expression {
+			span: span!(),
+			node: Expr::Integer(1),
+		},
+
+		False => Expression {
+			span: span!(),
+			node: Expr::Integer(0),
+		},
+
 		atom[lhs] LParen param_list[rhs] RParen => Expression {
 			span: span!(),
 			node: Expr::FuncCall(Box::new(lhs), Box::new(rhs)),
