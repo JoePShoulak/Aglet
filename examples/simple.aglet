@@ -1,0 +1,3 @@
+funk main() -> void {
+	print(10);
+}

@@ -5,6 +5,7 @@ use std::io;
 mod lexer;
 mod parser;
 mod semantics;
+mod codegen;
 
 pub mod message;
 mod flags;
@@ -84,6 +85,9 @@ fn main() -> ExitCode {
 		message::abort();
 		return ExitCode::FAILURE;
 	}
+
+	//Program is OK, generate code.
+	ast.codegen();
 
 	message::info("Finished compilation.");
 	return ExitCode::SUCCESS;

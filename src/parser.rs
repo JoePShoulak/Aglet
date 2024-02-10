@@ -1,4 +1,3 @@
-
 pub mod ast {
 	use crate::lexer::Span;
 
@@ -15,11 +14,25 @@ pub mod ast {
 
 	#[derive(Debug)]
 	pub enum Stmt {
+		/** param1: expression */
 		ExprStmt(Box<Expression>),
+		/**
+		```plaintext
+		param1: function name
+		param2: parameters
+		param3: return type
+		param4: function body
+		```
+		*/
 		FuncDecl(Box<Ident>, Box<Vec<Param>>, Box<Ident>, Box<Program>),
 		ReturnStmt(Box<Option<Expression>>),
 		IfStmt(Box<Expression>, Box<Program>, Box<Program>),
-		VarDecl(Box<Vec<Qualifier>>, Box<Ident>, Box<Option<Ident>>, Box<Expression>),
+		VarDecl(
+			Box<Vec<Qualifier>>,
+			Box<Ident>,
+			Box<Option<Ident>>,
+			Box<Expression>,
+		),
 		WhileStmt(Box<Expression>, Box<Program>),
 		BreakStmt,
 		ContinueStmt,
