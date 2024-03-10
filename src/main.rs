@@ -67,7 +67,7 @@ fn main() -> ExitCode {
 
 	if message::errored() {
 		message::abort();
-		return ExitCode::FAILURE;
+		return if options.language_server { ExitCode::SUCCESS } else { ExitCode::FAILURE }
 	}
 
 	let ast = ast.unwrap();
@@ -83,7 +83,13 @@ fn main() -> ExitCode {
 
 	if message::errored() {
 		message::abort();
-		return ExitCode::FAILURE;
+		return if options.language_server { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+	}
+
+	//If we're running as a language server, exit here.
+	//No need to generate code.
+	if options.language_server {
+		return ExitCode::SUCCESS;
 	}
 
 	//Program is OK, generate code.
