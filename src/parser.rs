@@ -88,8 +88,8 @@ pub mod ast {
 	#[derive(Debug)]
 	pub struct Param {
 		pub span: Span,
-		pub name: String,
-		pub datatype: String,
+		pub name: Ident,
+		pub datatype: Ident,
 	}
 
 	#[derive(Debug)]
@@ -223,7 +223,7 @@ parser! {
 	}
 
 	param_decl: Param {
-		Identifier(name) Colon Identifier(datatype) => Param {
+		ident[name] Colon ident[datatype] => Param {
 			span: span!(),
 			name: name,
 			datatype: datatype,

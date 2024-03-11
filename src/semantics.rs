@@ -87,7 +87,7 @@ impl<'a> Analyzer<'a> {
 			}
 		}
 
-		return None;
+		None
 	}
 
 	pub fn get_current_function(&self) -> Option<(&FuncSig, &String)> {

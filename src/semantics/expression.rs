@@ -177,6 +177,10 @@ impl Expression {
 						Analyzer::INT.to_string()
 					},
 					Some(var) => {
+						if !var.mutable && analyzer.flags.language_server {
+							message::diagnostic(message::DiagnosticType::Constant, Some(self.span), Some(analyzer.context));
+						}
+
 						let ret = var.data_type.clone();
 						analyzer.use_variable(name);
 						ret

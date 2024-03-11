@@ -55,7 +55,7 @@ impl Statement {
 						message::error(format!("Redeclaration of function `{}`", name.value), Some(name.span), Some(analyzer.context));
 					},
 					None => {
-						let params = params.iter().map(|s| s.datatype.clone()).collect();
+						let params = params.iter().map(|s| s.datatype.value.clone()).collect();
 						analyzer.set_function(&name.value, params, &return_type.value.clone());
 					},
 				}
@@ -96,7 +96,11 @@ impl Statement {
 
 				//Declare variables in scope. We may want to allow them to be mutable? For now they are immutable
 				for param in params.iter() {
-					analyzer.set_variable(&param.name, &param.datatype, false, param.span);
+					if analyzer.flags.language_server {
+						message::diagnostic(message::DiagnosticType::Constant, Some(param.name.span), Some(analyzer.context));
+					}
+
+					analyzer.set_variable(&param.name.value, &param.datatype.value, false, param.span);
 				}
 
 				let return_guaranteed = body.analyze(analyzer);
@@ -143,6 +147,10 @@ impl Statement {
 					Mutable => true,
 					Immutable => false,
 				};
+
+				if !mutable && analyzer.flags.language_server {
+					message::diagnostic(message::DiagnosticType::Constant, Some(name.span), Some(analyzer.context));
+				}
 
 				match **datatype {
 					None => {

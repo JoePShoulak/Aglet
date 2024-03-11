@@ -11,6 +11,10 @@ pub struct Context<'a> {
 	pub source: &'a String,
 }
 
+pub enum DiagnosticType {
+	Constant,
+}
+
 fn print_message(text: String, span: Option<Span>, context: Option<&Context>) {
 	eprintln!("{}", text);
 
@@ -43,6 +47,20 @@ fn print_message(text: String, span: Option<Span>, context: Option<&Context>) {
 			};
 		}
 	};
+}
+
+pub fn diagnostic(diagnostic_type: DiagnosticType, span: Option<Span>, _context: Option<&Context>) {
+	if *LANGUAGE_SERVER.lock().unwrap() {
+		match span {
+			None => {},
+			Some(s) => {
+				let tp = match diagnostic_type {
+					DiagnosticType::Constant => 'C'
+				};
+				println!("{}|{}|{}", tp, s.lo, s.hi);
+			},
+		}
+	}
 }
 
 pub fn abort() {
