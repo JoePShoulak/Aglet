@@ -1,23 +1,23 @@
 use crate::parser::ast::Statement;
 use crate::parser::ast::Stmt::*;
 
+use super::asm::Bytecode;
+
 impl Statement {
-	pub fn codegen(&self) {
+	pub fn codegen(&self) -> Vec<Bytecode> {
 		match &self.node {
 			FuncDecl(name, _params, _return_val, program) => {
 				if name.value == "main" {
-					program.codegen();
+					program.codegen()
 				} else {
-					todo!("we can't handle other functions!")
+					panic!("we can't handle other functions!")
 				}
 			}
 
-			ExprStmt(expr) => {
-				expr.codegen();
-			}
+			ExprStmt(expr) => expr.codegen(),
 
 			_ => {
-				todo!("AAAAA");
+				panic!("AAAAA");
 			}
 		}
 	}

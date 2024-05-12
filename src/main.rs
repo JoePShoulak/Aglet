@@ -3,9 +3,11 @@ use std::io;
 use std::process::ExitCode;
 
 mod codegen;
+mod codegen;
 mod lexer;
 mod parser;
 mod semantics;
+use codegen::asm::Bytecode;
 
 mod flags;
 pub mod message;
@@ -111,7 +113,31 @@ fn main() -> ExitCode {
 	}
 
 	//Program is OK, generate code.
-	ast.codegen();
+	let bytecode = ast.codegen();
+
+	//Here is where we'd run bytecode optimizations if we had them.
+
+	//Convert code to text
+	let output_text = if options.binary {
+		Bytecode::output_binary(bytecode)
+	} else {
+		Bytecode::output_text(bytecode)
+	};
+
+	//Output to file or stdout
+	let filename = options.output.to_str().unwrap();
+	if filename == "-" {
+		print!("{}", output_text);
+	} else {
+		match fs::write(filename, output_text) {
+			Err(error) => {
+				eprintln!("{}", error);
+				return ExitCode::FAILURE;
+			}
+
+			Ok(_) => {}
+		}
+	}
 
 	message::info("Finished compilation.");
 	return ExitCode::SUCCESS;
