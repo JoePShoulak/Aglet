@@ -13,6 +13,10 @@ pub struct Options {
 	#[structopt(long, short)]
 	pub warn_suppress: bool,
 
+	/// Output raw binary instead of assembly
+	#[structopt(long, short)]
+	pub binary: bool,
+
 	/// Output detailed info in an easy-to-parse format
 	#[structopt(long)]
 	pub language_server: bool,
@@ -20,6 +24,10 @@ pub struct Options {
 	/// The input file
 	#[structopt(parse(from_os_str))]
 	pub input: PathBuf,
+
+	/// The output file
+	#[structopt(parse(from_os_str))]
+	pub output: PathBuf,
 }
 
 pub fn read() -> Options {

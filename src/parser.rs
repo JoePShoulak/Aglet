@@ -76,16 +76,6 @@ pub mod ast {
 	}
 
 	#[derive(Debug)]
-	pub struct ParamList {
-		pub params: Vec<Expression>,
-	}
-
-	#[derive(Debug)]
-	pub struct ParamDeclList {
-		pub params: Vec<Param>,
-	}
-
-	#[derive(Debug)]
 	pub struct Param {
 		pub span: Span,
 		pub name: Ident,
