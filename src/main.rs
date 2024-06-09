@@ -3,7 +3,6 @@ use std::io;
 use std::process::ExitCode;
 
 mod codegen;
-mod codegen;
 mod lexer;
 mod parser;
 mod semantics;
