@@ -1,6 +1,6 @@
-use std::sync::Mutex;
-use colored::Colorize;
 use crate::lexer::Span;
+use colored::Colorize;
+use std::sync::Mutex;
 
 //Thread safety. Not necessary yet but good practice.
 static DID_ERROR: Mutex<bool> = Mutex::new(false);
@@ -19,7 +19,7 @@ fn print_message(text: String, span: Option<Span>, context: Option<&Context>) {
 	eprintln!("{}", text);
 
 	match context {
-		None => {},
+		None => {}
 		Some(context) => {
 			match span {
 				None => {
@@ -28,22 +28,48 @@ fn print_message(text: String, span: Option<Span>, context: Option<&Context>) {
 					let lines: Vec<&str> = context.source.lines().collect();
 
 					//Print filename, and the last lines of the file
-					eprintln!("  {} {}:{}", "-->".bright_blue().bold(), context.filename, lines.len());
+					eprintln!(
+						"  {} {}:{}",
+						"-->".bright_blue().bold(),
+						context.filename,
+						lines.len()
+					);
 					eprintln!("   {}", "|".bright_blue().bold());
 					if lines.len() > 1 {
-						eprintln!("{:<3}{} {}", format!("{}", lines.len()-1).bright_blue().bold(), "|".bright_blue().bold(), &lines[lines.len() - 2]);
+						eprintln!(
+							"{:<3}{} {}",
+							format!("{}", lines.len() - 1).bright_blue().bold(),
+							"|".bright_blue().bold(),
+							&lines[lines.len() - 2]
+						);
 					}
 					if lines.len() > 0 {
-						eprintln!("{:<3}{} {} {}", format!("{}", lines.len()).bright_blue().bold(), "|".bright_blue().bold(), &lines[lines.len() - 1], "(EOF)".bright_blue().bold());
-						eprintln!("   {} {} {}", "|".bright_blue().bold(), " ".repeat(lines[lines.len() - 1].len()), " ^^^".bright_blue().bold());
+						eprintln!(
+							"{:<3}{} {} {}",
+							format!("{}", lines.len()).bright_blue().bold(),
+							"|".bright_blue().bold(),
+							&lines[lines.len() - 1],
+							"(EOF)".bright_blue().bold()
+						);
+						eprintln!(
+							"   {} {} {}",
+							"|".bright_blue().bold(),
+							" ".repeat(lines[lines.len() - 1].len()),
+							" ^^^".bright_blue().bold()
+						);
 					} else {
-						eprintln!("{:<3}{} {}", format!("{}", lines.len()).bright_blue().bold(), "|".bright_blue().bold(), "(EOF)".bright_blue().bold());
+						eprintln!(
+							"{:<3}{} {}",
+							format!("{}", lines.len()).bright_blue().bold(),
+							"|".bright_blue().bold(),
+							"(EOF)".bright_blue().bold()
+						);
 						eprintln!("   {}", "|  ^^^".bright_blue().bold());
 					}
-				},
+				}
 				Some(span) => {
 					print_context(Some(context.filename), context.source, span);
-				},
+				}
 			};
 		}
 	};
@@ -52,21 +78,27 @@ fn print_message(text: String, span: Option<Span>, context: Option<&Context>) {
 pub fn diagnostic(diagnostic_type: DiagnosticType, span: Option<Span>, _context: Option<&Context>) {
 	if *LANGUAGE_SERVER.lock().unwrap() {
 		match span {
-			None => {},
+			None => {}
 			Some(s) => {
 				let tp = match diagnostic_type {
-					DiagnosticType::Constant => 'C'
+					DiagnosticType::Constant => 'C',
 				};
 				println!("{}|{}|{}", tp, s.lo, s.hi);
-			},
+			}
 		}
 	}
 }
 
 pub fn abort() {
-	if *LANGUAGE_SERVER.lock().unwrap() { return; }
+	if *LANGUAGE_SERVER.lock().unwrap() {
+		return;
+	}
 
-	eprintln!("{}: {}", "aborted".red().bold(), "Unable to continue due to previous errors".bold());
+	eprintln!(
+		"{}: {}",
+		"aborted".red().bold(),
+		"Unable to continue due to previous errors".bold()
+	);
 }
 
 pub fn error(text: String, span: Option<Span>, context: Option<&Context>) {
@@ -75,38 +107,46 @@ pub fn error(text: String, span: Option<Span>, context: Option<&Context>) {
 
 	if *LANGUAGE_SERVER.lock().unwrap() {
 		match span {
-			None => {},
+			None => {}
 			Some(s) => {
 				println!("E|{}|{}|{}", s.lo, s.hi, text.replace("\n", "\\n"));
-			},
+			}
 		}
 		return;
 	}
 
-	print_message(format!("{}: {}", "error".red().bold(), text.bold()), span, context);
+	print_message(
+		format!("{}: {}", "error".red().bold(), text.bold()),
+		span,
+		context,
+	);
 }
 
 pub fn warning(text: String, span: Option<Span>, context: Option<&Context>) {
 	if *LANGUAGE_SERVER.lock().unwrap() {
 		match span {
-			None => {},
+			None => {}
 			Some(s) => {
 				println!("W|{}|{}|{}", s.lo, s.hi, text.replace("\n", "\\n"));
-			},
+			}
 		}
 		return;
 	}
 
-	print_message(format!("{}: {}", "warning".yellow().bold(), text.bold()), span, context);
+	print_message(
+		format!("{}: {}", "warning".yellow().bold(), text.bold()),
+		span,
+		context,
+	);
 }
 
 pub fn hint(text: String, span: Option<Span>, context: Option<&Context>) {
 	if *LANGUAGE_SERVER.lock().unwrap() {
 		match span {
-			None => {},
+			None => {}
 			Some(s) => {
 				println!("H|{}|{}|{}", s.lo, s.hi, text.replace("\n", "\\n"));
-			},
+			}
 		}
 		return;
 	}
@@ -130,22 +170,48 @@ pub fn hint(text: String, span: Option<Span>, context: Option<&Context>) {
 					let col_no = span.lo - line_begin;
 
 					//If hint is related to a previous message, print it differently
-					eprintln!("   {} {}{} {}", "|".bright_blue().bold(), " ".repeat(col_no), "∟".bright_blue().bold(), text);
-				},
+					eprintln!(
+						"   {} {}{} {}",
+						"|".bright_blue().bold(),
+						" ".repeat(col_no),
+						"∟".bright_blue().bold(),
+						text
+					);
+				}
 
 				None => {
-					print_message(format!("   {} {}: {}", "=".bright_blue().bold(), "hint".bold(), text), span, context);
-				},
+					print_message(
+						format!(
+							"   {} {}: {}",
+							"=".bright_blue().bold(),
+							"hint".bold(),
+							text
+						),
+						span,
+						context,
+					);
+				}
 			}
-		},
+		}
 		None => {
-			print_message(format!("   {} {}: {}", "=".bright_blue().bold(), "hint".bold(), text), span, context);
-		},
+			print_message(
+				format!(
+					"   {} {}: {}",
+					"=".bright_blue().bold(),
+					"hint".bold(),
+					text
+				),
+				span,
+				context,
+			);
+		}
 	}
 }
 
 pub fn info(text: &str) {
-	if *LANGUAGE_SERVER.lock().unwrap() { return; }
+	if *LANGUAGE_SERVER.lock().unwrap() {
+		return;
+	}
 	eprintln!("{}: {}", "info".bold(), text);
 }
 
@@ -154,7 +220,9 @@ pub fn errored() -> bool {
 }
 
 pub fn context(span: Span, context: &Context) {
-	if *LANGUAGE_SERVER.lock().unwrap() { return; }
+	if *LANGUAGE_SERVER.lock().unwrap() {
+		return;
+	}
 	print_context(Some(context.filename), context.source, span);
 }
 
@@ -188,24 +256,40 @@ fn print_context(filename: Option<&String>, full_text: &String, span: Span) {
 	//Print filename, line number and column number.
 	match filename {
 		None => {
-			eprintln!("  {} stdin:{}:{}", "-->".bright_blue().bold(), line_no, col_no);
-		},
+			eprintln!(
+				"  {} stdin:{}:{}",
+				"-->".bright_blue().bold(),
+				line_no,
+				col_no
+			);
+		}
 		Some(s) => {
-			eprintln!("  {} {}:{}:{}", "-->".bright_blue().bold(), s, line_no, col_no);
+			eprintln!(
+				"  {} {}:{}:{}",
+				"-->".bright_blue().bold(),
+				s,
+				line_no,
+				col_no
+			);
 		}
 	}
 
 	//Print the lines in question and highlight what element is being referred to.
 	eprintln!("   {}", "|".bright_blue().bold());
 
-	let lines: Vec<&str> = full_text[line_begin ..= line_end].lines().collect();
+	let lines: Vec<&str> = full_text[line_begin..=line_end].lines().collect();
 	let total = lines.len();
 	let mut ct = 0;
 	let mut max_len = 1;
 	for line in lines {
 		if ct == 0 || ct == total - 1 {
-			eprintln!("{:<3}{} {}", format!("{}", line_no + ct).bright_blue().bold(), "|".bright_blue().bold(), line);
-			max_len = std::cmp::max(max_len, line.len()-1);
+			eprintln!(
+				"{:<3}{} {}",
+				format!("{}", line_no + ct).bright_blue().bold(),
+				"|".bright_blue().bold(),
+				line
+			);
+			max_len = std::cmp::max(max_len, line.len() - 1);
 		}
 		if ct == 1 && total > 2 {
 			eprintln!("   {}", "|    ...".bright_blue().bold());
@@ -214,9 +298,18 @@ fn print_context(filename: Option<&String>, full_text: &String, span: Span) {
 	}
 
 	if ct == 1 {
-		eprintln!("   {} {}{}", "|".bright_blue().bold(), " ".repeat(span.lo - line_begin), "^".repeat(span.hi - span.lo).bright_blue().bold());
+		eprintln!(
+			"   {} {}{}",
+			"|".bright_blue().bold(),
+			" ".repeat(span.lo - line_begin),
+			"^".repeat(span.hi - span.lo).bright_blue().bold()
+		);
 	} else {
-		eprintln!("   {} {}{}", "|".bright_blue().bold(), " ".repeat(span.lo - line_begin), "^".repeat(max_len).bright_blue().bold());
+		eprintln!(
+			"   {} {}{}",
+			"|".bright_blue().bold(),
+			" ".repeat(span.lo - line_begin),
+			"^".repeat(max_len).bright_blue().bold()
+		);
 	}
-
 }

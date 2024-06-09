@@ -1,13 +1,13 @@
+use crate::flags::Options;
+use crate::lexer::Span;
 use crate::message::Context;
 use crate::parser::ast::Program;
 use std::collections::HashMap;
-use crate::lexer::Span;
-use crate::flags::Options;
 
+mod assign;
+mod expression;
 mod program;
 mod statement;
-mod expression;
-mod assign;
 
 pub struct FuncSig {
 	return_type: String,
@@ -24,7 +24,12 @@ pub struct VarSig {
 
 impl std::fmt::Display for FuncSig {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		write!(f, "({}) -> {}", self.param_types.join(", "), self.return_type)
+		write!(
+			f,
+			"({}) -> {}",
+			self.param_types.join(", "),
+			self.return_type
+		)
 	}
 }
 
@@ -64,7 +69,11 @@ impl<'a> Analyzer<'a> {
 			flags: flags,
 		};
 
-		analyzer.set_function(&String::from("print"), vec![Analyzer::INT.to_string()], Analyzer::VOID);
+		analyzer.set_function(
+			&String::from("print"),
+			vec![Analyzer::INT.to_string()],
+			Analyzer::VOID,
+		);
 
 		ast.analyze(&mut analyzer);
 		analyzer
@@ -82,8 +91,10 @@ impl<'a> Analyzer<'a> {
 		for scope in &self.scopes {
 			let func = scope.functions.get(name);
 			match func {
-				None => {},
-				_ => { return func; },
+				None => {}
+				_ => {
+					return func;
+				}
 			}
 		}
 
@@ -92,19 +103,20 @@ impl<'a> Analyzer<'a> {
 
 	pub fn get_current_function(&self) -> Option<(&FuncSig, &String)> {
 		match self.func_stack.last() {
-			None => { None },
-			Some(func) => {
-				Some((self.get_function(func).unwrap(), func))
-			},
+			None => None,
+			Some(func) => Some((self.get_function(func).unwrap(), func)),
 		}
 	}
 
 	pub fn set_function(&mut self, name: &String, params: Vec<String>, return_type: &str) {
 		let scope = self.scopes.last_mut().unwrap();
-		scope.functions.insert(name.to_string(), FuncSig {
-			return_type: return_type.to_string(),
-			param_types: params,
-		});
+		scope.functions.insert(
+			name.to_string(),
+			FuncSig {
+				return_type: return_type.to_string(),
+				param_types: params,
+			},
+		);
 	}
 
 	pub fn valid_return_type(&self, return_type: &String) -> bool {
@@ -116,8 +128,10 @@ impl<'a> Analyzer<'a> {
 			for scope in &self.scopes {
 				let var = scope.variables.get(name);
 				match var {
-					None => {},
-					_ => { return var; },
+					None => {}
+					_ => {
+						return var;
+					}
 				}
 			}
 			None
@@ -128,24 +142,29 @@ impl<'a> Analyzer<'a> {
 
 	pub fn set_variable(&mut self, name: &String, data_type: &str, mutable: bool, span: Span) {
 		let scope = self.scopes.last_mut().unwrap();
-		scope.variables.insert(name.to_string(), VarSig {
-			data_type: data_type.to_string(),
-			mutable: mutable,
-			span: Span {
-				lo: span.lo,
-				hi: span.hi,
+		scope.variables.insert(
+			name.to_string(),
+			VarSig {
+				data_type: data_type.to_string(),
+				mutable: mutable,
+				span: Span {
+					lo: span.lo,
+					hi: span.hi,
+				},
+				used: 0,
+				changed: 0,
 			},
-			used: 0,
-			changed: 0,
-		});
+		);
 	}
 
 	pub fn change_variable(&mut self, name: &String) {
 		for scope in &mut self.scopes {
 			let var = scope.variables.get_mut(name);
 			match var {
-				None => {},
-				Some(value) => { value.changed += 1; },
+				None => {}
+				Some(value) => {
+					value.changed += 1;
+				}
 			}
 		}
 	}
@@ -154,8 +173,10 @@ impl<'a> Analyzer<'a> {
 		for scope in &mut self.scopes {
 			let var = scope.variables.get_mut(name);
 			match var {
-				None => {},
-				Some(value) => { value.used += 1; },
+				None => {}
+				Some(value) => {
+					value.used += 1;
+				}
 			}
 		}
 	}

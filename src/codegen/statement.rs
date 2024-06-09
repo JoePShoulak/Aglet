@@ -10,15 +10,15 @@ impl Statement {
 				} else {
 					todo!("we can't handle other functions!")
 				}
-			},
+			}
 
 			ExprStmt(expr) => {
 				expr.codegen();
-			},
+			}
 
 			_ => {
 				todo!("AAAAA");
-			},
+			}
 		}
 	}
 }

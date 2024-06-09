@@ -1,5 +1,5 @@
-use plex::lexer;
 use crate::message;
+use plex::lexer;
 
 #[derive(Debug, Clone)]
 pub enum Token {
@@ -161,7 +161,7 @@ impl<'a> Iterator for Lexer<'a> {
 				let lo = self.original.len() - self.remaining.len();
 				let hi = self.original.len() - new_remaining.len();
 				self.remaining = new_remaining;
-				(tok, Span {lo, hi})
+				(tok, Span { lo, hi })
 			} else {
 				return None;
 			};
@@ -172,7 +172,11 @@ impl<'a> Iterator for Lexer<'a> {
 				}
 
 				Token::Unknown(text) => {
-					message::error(format!("unexpected character `{}`", text), Some(span), Some(&self.context));
+					message::error(
+						format!("unexpected character `{}`", text),
+						Some(span),
+						Some(&self.context),
+					);
 					continue;
 				}
 

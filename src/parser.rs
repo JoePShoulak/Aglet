@@ -105,9 +105,9 @@ pub mod ast {
 	}
 }
 
-use ast::*;
-use crate::lexer::*;
 use crate::lexer::Token::*;
+use crate::lexer::*;
+use ast::*;
 use plex::parser;
 
 parser! {
@@ -369,12 +369,16 @@ parser! {
 	}
 }
 
-pub fn parse<I: Iterator<Item = (Token, Span)>>(i: I) -> Result<Program, (Option<(Token, Span)>, &'static str)> {
+pub fn parse<I: Iterator<Item = (Token, Span)>>(
+	i: I,
+) -> Result<Program, (Option<(Token, Span)>, &'static str)> {
 	parse_(i)
 }
 
-#[cfg(debug_assertions)] use regex::Regex;
-#[cfg(debug_assertions)] use colored::Colorize;
+#[cfg(debug_assertions)]
+use colored::Colorize;
+#[cfg(debug_assertions)]
+use regex::Regex;
 #[cfg(debug_assertions)]
 pub fn pretty(ast: &Program) -> String {
 	let fluff = Regex::new(r"\n *[\)\}\]],?").unwrap();

@@ -1,14 +1,14 @@
-use std::process::ExitCode;
 use std::fs;
 use std::io;
+use std::process::ExitCode;
 
+mod codegen;
 mod lexer;
 mod parser;
 mod semantics;
-mod codegen;
 
-pub mod message;
 mod flags;
+pub mod message;
 
 fn main() -> ExitCode {
 	//Disable colors globally if stderr or stdout are not TTY
@@ -25,7 +25,9 @@ fn main() -> ExitCode {
 	//Read input file
 	let mut s = String::new();
 	let filename = if options.input.to_str().unwrap() == "-" {
-		for line in io::stdin().lines() { s += &line.unwrap(); }
+		for line in io::stdin().lines() {
+			s += &line.unwrap();
+		}
 		"stdin"
 	} else {
 		s = match fs::read_to_string(&options.input) {
@@ -36,14 +38,18 @@ fn main() -> ExitCode {
 			}
 		};
 		options.input.to_str().unwrap()
-	}.to_string();
+	}
+	.to_string();
 
 	s = s.replace("\t", " "); //For formatting reasons, replace all tabs with spaces.
 
-	let context = message::Context { filename: &filename, source: &s };
+	let context = message::Context {
+		filename: &filename,
+		source: &s,
+	};
 
 	//Create lexer (iterator), with debug info for each token read
-	let lexer = lexer::Lexer::new(&context);//.inspect(|tok| eprintln!("tok: {:?}", tok));
+	let lexer = lexer::Lexer::new(&context); //.inspect(|tok| eprintln!("tok: {:?}", tok));
 
 	message::info("Building AST...");
 
@@ -53,21 +59,29 @@ fn main() -> ExitCode {
 			match e.0 {
 				None => {
 					//We hit EOF
-					message::error(format!("{}", "Unexpected end of file"), None, Some(&context));
-				},
+					message::error(
+						format!("{}", "Unexpected end of file"),
+						None,
+						Some(&context),
+					);
+				}
 				Some(s) => {
 					message::error(format!("{}", e.1), Some(s.1), Some(&context));
-				},
+				}
 			};
 
 			None
-		},
+		}
 		Ok(program) => Some(program),
 	};
 
 	if message::errored() {
 		message::abort();
-		return if options.language_server { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+		return if options.language_server {
+			ExitCode::SUCCESS
+		} else {
+			ExitCode::FAILURE
+		};
 	}
 
 	let ast = ast.unwrap();
@@ -83,7 +97,11 @@ fn main() -> ExitCode {
 
 	if message::errored() {
 		message::abort();
-		return if options.language_server { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+		return if options.language_server {
+			ExitCode::SUCCESS
+		} else {
+			ExitCode::FAILURE
+		};
 	}
 
 	//If we're running as a language server, exit here.

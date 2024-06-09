@@ -1,29 +1,29 @@
-use crate::parser::ast::Statement;
-use crate::parser::ast::Expression;
-use crate::parser::ast::Stmt::*;
-use crate::parser::ast::Expr::*;
-use crate::parser::ast::Qualifier::*;
-use crate::semantics::Analyzer;
 use crate::message;
+use crate::parser::ast::Expr::*;
+use crate::parser::ast::Expression;
+use crate::parser::ast::Qualifier::*;
+use crate::parser::ast::Statement;
+use crate::parser::ast::Stmt::*;
+use crate::semantics::Analyzer;
 
 impl Statement {
 	fn hint_function_signature(&self, expr: &Expression, analyzer: &Analyzer) {
 		//If the expression is a function, try to print a hint about its signature.
 		match &expr.node {
-			FuncCall(name, _) => {
-				match &name.node {
-					Var(id) => {
-						match analyzer.get_function(id) {
-							None => {},
-							Some(func) => {
-								message::hint(format!("Function signature is `{}{}`", id, func), Some(expr.span), Some(analyzer.context));
-							},
-						}
-					},
-					_ => {},
-				}
+			FuncCall(name, _) => match &name.node {
+				Var(id) => match analyzer.get_function(id) {
+					None => {}
+					Some(func) => {
+						message::hint(
+							format!("Function signature is `{}{}`", id, func),
+							Some(expr.span),
+							Some(analyzer.context),
+						);
+					}
+				},
+				_ => {}
 			},
-			_ => {},
+			_ => {}
 		}
 	}
 
@@ -32,36 +32,56 @@ impl Statement {
 		match &self.node {
 			FuncDecl(_, _, _, _) => {
 				if analyzer.func_stack.len() > 0 {
-					message::error("Functions cannot be declared inside other functions".to_string(), Some(self.span), Some(analyzer.context));
+					message::error(
+						"Functions cannot be declared inside other functions".to_string(),
+						Some(self.span),
+						Some(analyzer.context),
+					);
 				}
-			},
+			}
 			_ => {
 				if analyzer.func_stack.len() == 0 {
-					message::error("This statement must be inside a function".to_string(), Some(self.span), Some(analyzer.context));
+					message::error(
+						"This statement must be inside a function".to_string(),
+						Some(self.span),
+						Some(analyzer.context),
+					);
 					return false;
 				}
-			},
+			}
 		}
-
 
 		match &self.node {
 			ExprStmt(expr) => {
 				expr.analyze(analyzer);
-			},
+			}
 
 			FuncDecl(name, params, return_type, body) => {
 				match analyzer.get_function(&name.value) {
 					Some(_) => {
-						message::error(format!("Redeclaration of function `{}`", name.value), Some(name.span), Some(analyzer.context));
-					},
+						message::error(
+							format!("Redeclaration of function `{}`", name.value),
+							Some(name.span),
+							Some(analyzer.context),
+						);
+					}
 					None => {
 						let params = params.iter().map(|s| s.datatype.value.clone()).collect();
 						analyzer.set_function(&name.value, params, &return_type.value.clone());
-					},
+					}
 				}
 
 				if !analyzer.valid_return_type(&return_type.value) {
-					message::error(format!("Unknown return type `{}`. Valid types are `{}` or `{}`", return_type.value, Analyzer::INT, Analyzer::VOID), Some(return_type.span), Some(analyzer.context));
+					message::error(
+						format!(
+							"Unknown return type `{}`. Valid types are `{}` or `{}`",
+							return_type.value,
+							Analyzer::INT,
+							Analyzer::VOID
+						),
+						Some(return_type.span),
+						Some(analyzer.context),
+					);
 				}
 
 				if name.value == Analyzer::FUNC_MAIN {
@@ -81,12 +101,23 @@ impl Statement {
 							return_type.span
 						};
 
-						message::error(format!("Function signature for `main` must be `() -> {}`", Analyzer::VOID), Some(span), Some(analyzer.context));
+						message::error(
+							format!(
+								"Function signature for `main` must be `() -> {}`",
+								Analyzer::VOID
+							),
+							Some(span),
+							Some(analyzer.context),
+						);
 					}
 
 					//Also only allow it to be declared in the global scope
 					if analyzer.scopes.len() > 1 {
-						message::error(format!("Function `main` may only be declared in the global scope"), Some(name.span), Some(analyzer.context));
+						message::error(
+							format!("Function `main` may only be declared in the global scope"),
+							Some(name.span),
+							Some(analyzer.context),
+						);
 					}
 				}
 
@@ -97,10 +128,19 @@ impl Statement {
 				//Declare variables in scope. We may want to allow them to be mutable? For now they are immutable
 				for param in params.iter() {
 					if analyzer.flags.language_server {
-						message::diagnostic(message::DiagnosticType::Constant, Some(param.name.span), Some(analyzer.context));
+						message::diagnostic(
+							message::DiagnosticType::Constant,
+							Some(param.name.span),
+							Some(analyzer.context),
+						);
 					}
 
-					analyzer.set_variable(&param.name.value, &param.datatype.value, false, param.span);
+					analyzer.set_variable(
+						&param.name.value,
+						&param.datatype.value,
+						false,
+						param.span,
+					);
 				}
 
 				let return_guaranteed = body.analyze(analyzer);
@@ -122,25 +162,40 @@ impl Statement {
 					}
 				}
 
-				if name.value != Analyzer::FUNC_MAIN && return_type.value != Analyzer::VOID  && !return_guaranteed {
+				if name.value != Analyzer::FUNC_MAIN
+					&& return_type.value != Analyzer::VOID
+					&& !return_guaranteed
+				{
 					message::error(format!("Function `{}` might not return a value. A value of type `{}` must always be returned", name.value, return_type.value), Some(self.span), Some(analyzer.context));
 				}
-			},
+			}
 
 			VarDecl(qualifiers, name, datatype, value) => {
 				let deduced_type = value.analyze(analyzer);
 
 				match analyzer.get_variable(&name.value, false) {
-					None => {},
+					None => {}
 					Some(var) => {
 						//Do we want to allow redeclaration of variables in the same scope? Disallow for now.
-						message::error(format!("Redeclaration of variable `{}`", name.value), Some(name.span), Some(analyzer.context));
-						message::hint(format!("Variable `{}` declared here", name.value), Some(name.span), Some(analyzer.context));
+						message::error(
+							format!("Redeclaration of variable `{}`", name.value),
+							Some(name.span),
+							Some(analyzer.context),
+						);
+						message::hint(
+							format!("Variable `{}` declared here", name.value),
+							Some(name.span),
+							Some(analyzer.context),
+						);
 
 						message::context(var.span, analyzer.context);
-						message::hint("But it was already declared here".to_string(), Some(var.span), Some(analyzer.context));
+						message::hint(
+							"But it was already declared here".to_string(),
+							Some(var.span),
+							Some(analyzer.context),
+						);
 						return false;
-					},
+					}
 				}
 
 				let mutable = match qualifiers[0] {
@@ -149,7 +204,11 @@ impl Statement {
 				};
 
 				if !mutable && analyzer.flags.language_server {
-					message::diagnostic(message::DiagnosticType::Constant, Some(name.span), Some(analyzer.context));
+					message::diagnostic(
+						message::DiagnosticType::Constant,
+						Some(name.span),
+						Some(analyzer.context),
+					);
 				}
 
 				match **datatype {
@@ -157,23 +216,38 @@ impl Statement {
 						//Deduce the type from the expression.
 
 						if !analyzer.valid_data_type(&deduced_type) {
-							message::error(format!("Cannot assign `{}` value to variable `{}`: invalid data type", deduced_type, name.value), Some(value.span), Some(analyzer.context));
+							message::error(
+								format!(
+									"Cannot assign `{}` value to variable `{}`: invalid data type",
+									deduced_type, name.value
+								),
+								Some(value.span),
+								Some(analyzer.context),
+							);
 							self.hint_function_signature(value, analyzer);
 						}
 						analyzer.set_variable(&name.value, &deduced_type, mutable, name.span);
-					},
+					}
 					Some(ref data_type) => {
 						if !analyzer.valid_data_type(&data_type.value) {
-							message::error(format!("Unknown data type `{}`. Only `{}` is supported at this time", data_type.value, Analyzer::INT), Some(data_type.span), Some(analyzer.context));
+							message::error(
+								format!(
+									"Unknown data type `{}`. Only `{}` is supported at this time",
+									data_type.value,
+									Analyzer::INT
+								),
+								Some(data_type.span),
+								Some(analyzer.context),
+							);
 						} else if deduced_type != data_type.value {
 							message::error(format!("Cannot assign `{}` value to variable `{}` of type `{}`: incompatible types", deduced_type, name.value, data_type.value), Some(value.span), Some(analyzer.context));
 							self.hint_function_signature(value, analyzer);
 						}
 
 						analyzer.set_variable(&name.value, &data_type.value, mutable, name.span);
-					},
+					}
 				}
-			},
+			}
 
 			ReturnStmt(expr) => {
 				//At this point, we know that return statements will be inside a function.
@@ -182,18 +256,38 @@ impl Statement {
 				match **expr {
 					None => {
 						if func.return_type != Analyzer::VOID {
-							message::error(format!("Return statement must have a value"), Some(self.span), Some(analyzer.context));
-							message::hint(format!("Function signature is `{}{}`", name, func), Some(self.span), Some(analyzer.context));
+							message::error(
+								format!("Return statement must have a value"),
+								Some(self.span),
+								Some(analyzer.context),
+							);
+							message::hint(
+								format!("Function signature is `{}{}`", name, func),
+								Some(self.span),
+								Some(analyzer.context),
+							);
 						}
-					},
+					}
 					Some(ref expr) => {
 						if func.return_type == Analyzer::VOID {
-							message::error(format!("Return statement cannot have a value"), Some(expr.span), Some(analyzer.context));
-							message::hint(format!("Function signature is `{}{}`", name, func), Some(expr.span), Some(analyzer.context));
+							message::error(
+								format!("Return statement cannot have a value"),
+								Some(expr.span),
+								Some(analyzer.context),
+							);
+							message::hint(
+								format!("Function signature is `{}{}`", name, func),
+								Some(expr.span),
+								Some(analyzer.context),
+							);
 						} else {
 							let expr_type = expr.analyze(analyzer);
 							if expr_type == Analyzer::VOID {
-								message::error("Expression does not return a value".to_string(), Some(expr.span), Some(analyzer.context));
+								message::error(
+									"Expression does not return a value".to_string(),
+									Some(expr.span),
+									Some(analyzer.context),
+								);
 								self.hint_function_signature(expr, analyzer);
 							}
 						}
@@ -206,7 +300,11 @@ impl Statement {
 			IfStmt(condition, stmts_true, stmts_false) => {
 				let expr_type = condition.analyze(analyzer);
 				if expr_type == Analyzer::VOID {
-					message::error("Expression does not return a value".to_string(), Some(condition.span), Some(analyzer.context));
+					message::error(
+						"Expression does not return a value".to_string(),
+						Some(condition.span),
+						Some(analyzer.context),
+					);
 					self.hint_function_signature(condition, analyzer);
 				}
 
@@ -223,7 +321,11 @@ impl Statement {
 			WhileStmt(condition, stmts) => {
 				let expr_type = condition.analyze(analyzer);
 				if expr_type == Analyzer::VOID {
-					message::error("Expression does not return a value".to_string(), Some(condition.span), Some(analyzer.context));
+					message::error(
+						"Expression does not return a value".to_string(),
+						Some(condition.span),
+						Some(analyzer.context),
+					);
 					self.hint_function_signature(condition, analyzer);
 				}
 
@@ -234,19 +336,27 @@ impl Statement {
 				analyzer.pop_scope();
 
 				//Note: while loops are never really guaranteed to run. they might not.
-			},
+			}
 
 			BreakStmt => {
 				if analyzer.loops == 0 {
-					message::error("Statement `break` must be inside a loop".to_string(), Some(self.span), Some(analyzer.context));
+					message::error(
+						"Statement `break` must be inside a loop".to_string(),
+						Some(self.span),
+						Some(analyzer.context),
+					);
 				}
-			},
+			}
 
 			ContinueStmt => {
 				if analyzer.loops == 0 {
-					message::error("Statement `continue` must be inside a loop".to_string(), Some(self.span), Some(analyzer.context));
+					message::error(
+						"Statement `continue` must be inside a loop".to_string(),
+						Some(self.span),
+						Some(analyzer.context),
+					);
 				}
-			},
+			}
 		}
 
 		return false;
