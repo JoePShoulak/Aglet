@@ -12,5 +12,13 @@
 		"--config",
 		"tab_spaces=4,hard_tabs=true"
 	],
-	"editor.formatOnSave": true
+	"editor.formatOnSave": true,
+	"files.exclude": {
+		"**/target": true
+	},
+	"formatFiles.excludedFolders": [
+		".vscode",
+		".git",
+		"target"
+	]
 }
