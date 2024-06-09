@@ -1,0 +1,16 @@
+{
+	"rust-analyzer.linkedProjects": [
+		"./Cargo.toml"
+	],
+	"[rust]": {
+		"editor.defaultFormatter": "rust-lang.rust-analyzer",
+	},
+	"rust-analyzer.showUnlinkedFileNotification": false,
+	"editor.insertSpaces": false,
+	"editor.tabSize": 4,
+	"rust-analyzer.rustfmt.extraArgs": [
+		"--config",
+		"tab_spaces=4,hard_tabs=true"
+	],
+	"editor.formatOnSave": true
+}
