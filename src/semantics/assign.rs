@@ -1,15 +1,16 @@
 use crate::message;
 use crate::parser::ast::Expr::*;
 use crate::parser::ast::Expression;
+use crate::parser::ast::Statement;
 use crate::semantics::Analyzer;
 
-impl Expression {
+impl Statement {
 	pub fn analyze_assign(
 		&self,
 		analyzer: &mut Analyzer,
 		variable: &Expression,
 		expr: &Expression,
-	) -> String {
+	) {
 		let expr_type = expr.analyze(analyzer);
 		let var_type = variable.analyze(analyzer);
 
@@ -32,7 +33,6 @@ impl Expression {
 						Some(self.span),
 						Some(analyzer.context),
 					);
-					Analyzer::INT.to_string()
 				}
 				Some(var) => {
 					if expr_type != var_type {
@@ -57,9 +57,7 @@ impl Expression {
 							Some(analyzer.context),
 						);
 					}
-					let ret = var.data_type.clone();
 					analyzer.change_variable(id);
-					ret
 				}
 			},
 			_ => {
@@ -68,7 +66,6 @@ impl Expression {
 					Some(variable.span),
 					Some(analyzer.context),
 				);
-				Analyzer::INT.to_string()
 			}
 		}
 	}

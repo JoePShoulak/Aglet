@@ -357,6 +357,13 @@ impl Statement {
 					);
 				}
 			}
+
+			Assign(variable, expr) => self.analyze_assign(analyzer, variable, expr),
+			AddAssign(variable, expr) => self.analyze_assign(analyzer, variable, expr),
+			SubAssign(variable, expr) => self.analyze_assign(analyzer, variable, expr),
+			MulAssign(variable, expr) => self.analyze_assign(analyzer, variable, expr),
+			DivAssign(variable, expr) => self.analyze_assign(analyzer, variable, expr),
+			ModAssign(variable, expr) => self.analyze_assign(analyzer, variable, expr),
 		}
 
 		return false;

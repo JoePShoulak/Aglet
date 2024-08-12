@@ -36,6 +36,14 @@ pub mod ast {
 		WhileStmt(Box<Expression>, Box<Program>),
 		BreakStmt,
 		ContinueStmt,
+
+		//Assignment
+		Assign(Box<Expression>, Box<Expression>),
+		AddAssign(Box<Expression>, Box<Expression>),
+		SubAssign(Box<Expression>, Box<Expression>),
+		MulAssign(Box<Expression>, Box<Expression>),
+		DivAssign(Box<Expression>, Box<Expression>),
+		ModAssign(Box<Expression>, Box<Expression>),
 	}
 
 	#[derive(Debug)]
@@ -62,17 +70,10 @@ pub mod ast {
 		Equal(Box<Expression>, Box<Expression>),
 		NotEqual(Box<Expression>, Box<Expression>),
 
-		//Assignment
-		Assign(Box<Expression>, Box<Expression>),
-		AddAssign(Box<Expression>, Box<Expression>),
-		SubAssign(Box<Expression>, Box<Expression>),
-		MulAssign(Box<Expression>, Box<Expression>),
-		DivAssign(Box<Expression>, Box<Expression>),
-		ModAssign(Box<Expression>, Box<Expression>),
-
 		Var(String),
 		Integer(i64),
 		FuncCall(Box<Expression>, Box<Vec<Expression>>),
+		FuncDeclAnonymous(Box<Vec<Param>>, Box<Expression>),
 	}
 
 	#[derive(Debug)]
@@ -124,7 +125,7 @@ parser! {
 	}
 
 	statement: Statement {
-		assign[e] Semicolon => Statement {
+		expression[e] Semicolon => Statement {
 			span: span!(),
 			node: Stmt::ExprStmt(Box::new(e)),
 		},
@@ -139,7 +140,7 @@ parser! {
 			node: Stmt::FuncDecl(Box::new(name), Box::new(params), Box::new(return_type), Box::new(p)),
 		},
 
-		KwdReturn assign[e] Semicolon => Statement {
+		KwdReturn expression[e] Semicolon => Statement {
 			span: span!(),
 			node: Stmt::ReturnStmt(Box::new(Some(e))),
 		},
@@ -149,17 +150,17 @@ parser! {
 			node: Stmt::ReturnStmt(Box::new(None)),
 		},
 
-		KwdIf assign[e] LBrace program[p] RBrace KwdElse LBrace program[p2] RBrace => Statement {
+		KwdIf expression[e] LBrace program[p] RBrace KwdElse LBrace program[p2] RBrace => Statement {
 			span: span!(),
 			node: Stmt::IfStmt(Box::new(e), Box::new(p), Box::new(p2)),
 		},
 
-		KwdIf assign[e] LBrace program[p] RBrace => Statement {
+		KwdIf expression[e] LBrace program[p] RBrace => Statement {
 			span: span!(),
 			node: Stmt::IfStmt(Box::new(e), Box::new(p), Box::new(Program{stmts: vec![]})),
 		},
 
-		KwdWhile assign[e] LBrace program[p] RBrace => Statement {
+		KwdWhile expression[e] LBrace program[p] RBrace => Statement {
 			span: span!(),
 			node: Stmt::WhileStmt(Box::new(e), Box::new(p)),
 		},
@@ -175,15 +176,41 @@ parser! {
 		},
 
 		//Variable declaration without a specified type.
-		qualifiers[q] ident[name] OperAssign assign[e] Semicolon => Statement {
+		qualifiers[q] ident[name] OperAssign expression[e] Semicolon => Statement {
 			span: span!(),
 			node: Stmt::VarDecl(Box::new(q), Box::new(name), Box::new(None), Box::new(e)),
 		},
 
 		//Variable declaration WITH a specified type.
-		qualifiers[q] ident[name] Colon ident[typename] OperAssign assign[e] Semicolon => Statement {
+		qualifiers[q] ident[name] Colon ident[typename] OperAssign expression[e] Semicolon => Statement {
 			span: span!(),
 			node: Stmt::VarDecl(Box::new(q), Box::new(name), Box::new(Some(typename)), Box::new(e)),
+		},
+
+		//Assignment
+		expression[lhs] OperAssign expression[rhs] Semicolon => Statement {
+			span: span!(),
+			node: Stmt::Assign(Box::new(lhs), Box::new(rhs)),
+		},
+		expression[lhs] OperPlusAssign expression[rhs] Semicolon => Statement {
+			span: span!(),
+			node: Stmt::AddAssign(Box::new(lhs), Box::new(rhs)),
+		},
+		expression[lhs] OperMinusAssign expression[rhs] Semicolon => Statement {
+			span: span!(),
+			node: Stmt::SubAssign(Box::new(lhs), Box::new(rhs)),
+		},
+		expression[lhs] OperMultAssign expression[rhs] Semicolon => Statement {
+			span: span!(),
+			node: Stmt::MulAssign(Box::new(lhs), Box::new(rhs)),
+		},
+		expression[lhs] OperDivAssign expression[rhs] Semicolon => Statement {
+			span: span!(),
+			node: Stmt::DivAssign(Box::new(lhs), Box::new(rhs)),
+		},
+		expression[lhs] OperModAssign expression[rhs] Semicolon => Statement {
+			span: span!(),
+			node: Stmt::ModAssign(Box::new(lhs), Box::new(rhs)),
 		},
 	}
 
@@ -220,33 +247,22 @@ parser! {
 		}
 	}
 
-	//Assignment (lowest precedence)
-	assign: Expression {
-		compare[lhs] OperAssign assign[rhs] => Expression {
+	expression: Expression {
+		anonymous_function[e] => e,
+		compare[e] => e,
+	}
+
+	//Anonymous functions
+	anonymous_function: Expression {
+		KwdFunction LParen RParen BigArrow compare[a] => Expression {
 			span: span!(),
-			node: Expr::Assign(Box::new(lhs), Box::new(rhs)),
+			node: Expr::FuncDeclAnonymous(Box::new(vec![]), Box::new(a)),
 		},
-		compare[lhs] OperPlusAssign assign[rhs] => Expression {
+
+		KwdFunction LParen param_decl_list[params] RParen BigArrow compare[a] => Expression {
 			span: span!(),
-			node: Expr::AddAssign(Box::new(lhs), Box::new(rhs)),
+			node: Expr::FuncDeclAnonymous(Box::new(params), Box::new(a)),
 		},
-		compare[lhs] OperMinusAssign assign[rhs] => Expression {
-			span: span!(),
-			node: Expr::SubAssign(Box::new(lhs), Box::new(rhs)),
-		},
-		compare[lhs] OperMultAssign assign[rhs] => Expression {
-			span: span!(),
-			node: Expr::MulAssign(Box::new(lhs), Box::new(rhs)),
-		},
-		compare[lhs] OperDivAssign assign[rhs] => Expression {
-			span: span!(),
-			node: Expr::DivAssign(Box::new(lhs), Box::new(rhs)),
-		},
-		compare[lhs] OperModAssign assign[rhs] => Expression {
-			span: span!(),
-			node: Expr::ModAssign(Box::new(lhs), Box::new(rhs)),
-		},
-		compare[x] => x,
 	}
 
 	//Boolean comparison (lower precedence than addition)
@@ -347,15 +363,15 @@ parser! {
 			node: Expr::FuncCall(Box::new(lhs), Box::new(vec![])),
 		},
 
-		LParen assign[a] RParen => a,
+		LParen expression[a] RParen => a,
 	}
 
 	param_list: Vec<Expression> {
-		param_list[mut lhs] Comma assign[rhs] => {
+		param_list[mut lhs] Comma compare[rhs] => {
 			lhs.push(rhs);
 			lhs
 		},
-		assign[a] => vec![a],
+		compare[a] => vec![a],
 	}
 }
 

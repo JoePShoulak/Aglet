@@ -41,6 +41,7 @@ pub enum Token {
 	Colon,
 	Comma,
 	Arrow,
+	BigArrow,
 	Semicolon,
 	Dot,
 
@@ -105,6 +106,7 @@ lexer! {
 	":" => Token::Colon,
 	"," => Token::Comma,
 	"->" => Token::Arrow,
+	"=>" => Token::BigArrow,
 	";" => Token::Semicolon,
 	"\\." => Token::Dot,
 

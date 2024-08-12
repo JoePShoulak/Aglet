@@ -3,6 +3,8 @@ use crate::parser::ast::Expr::*;
 use crate::parser::ast::Expression;
 use crate::semantics::Analyzer;
 
+use super::FuncSig;
+
 impl Expression {
 	fn check_binary_arithmetic(&self, analyzer: &Analyzer, type1: String, type2: String) {
 		if type1 != Analyzer::INT || type2 != Analyzer::INT {
@@ -238,12 +240,54 @@ impl Expression {
 				}
 			},
 
-			Assign(variable, expr) => self.analyze_assign(analyzer, variable, expr),
-			AddAssign(variable, expr) => self.analyze_assign(analyzer, variable, expr),
-			SubAssign(variable, expr) => self.analyze_assign(analyzer, variable, expr),
-			MulAssign(variable, expr) => self.analyze_assign(analyzer, variable, expr),
-			DivAssign(variable, expr) => self.analyze_assign(analyzer, variable, expr),
-			ModAssign(variable, expr) => self.analyze_assign(analyzer, variable, expr),
+			FuncDeclAnonymous(params, expr) => {
+				analyzer.push_scope();
+				analyzer.func_stack.push("anonymous function".to_string());
+
+				//Declare variables in scope. We may want to allow them to be mutable? For now they are immutable
+				for param in params.iter() {
+					if analyzer.flags.language_server {
+						message::diagnostic(
+							message::DiagnosticType::Constant,
+							Some(param.name.span),
+							Some(analyzer.context),
+						);
+					}
+
+					analyzer.set_variable(
+						&param.name.value,
+						&param.datatype.value,
+						false,
+						param.span,
+					);
+				}
+
+				let expr_type = expr.analyze(analyzer);
+				analyzer.func_stack.pop();
+				let scope = analyzer.pop_scope();
+
+				//Check for any mutable variables that don't have to be
+				for (name, signature) in scope.variables {
+					if signature.used == 0 && !name.starts_with("_") {
+						if !analyzer.flags.warn_suppress {
+							message::warning(format!("Variable `{name}` is never used. If this is intentional, prefix the variable name with an underscore (e.g. `_{name}`)"), Some(signature.span), Some(analyzer.context));
+						}
+					}
+					if signature.mutable && signature.changed == 0 {
+						if !analyzer.flags.warn_suppress {
+							message::warning(format!("Variable `{name}` does not need to be mutable. Consider replacing `let` with `set`"), Some(signature.span), Some(analyzer.context));
+						}
+					}
+				}
+
+				format!(
+					"{}",
+					FuncSig {
+						return_type: expr_type,
+						param_types: params.iter().map(|p| p.datatype.value.clone()).collect(),
+					}
+				)
+			}
 		}
 	}
 }
