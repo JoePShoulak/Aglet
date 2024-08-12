@@ -11,8 +11,8 @@ impl Statement {
 		variable: &Expression,
 		expr: &Expression,
 	) {
-		let expr_type = expr.analyze(analyzer);
-		let var_type = variable.analyze(analyzer);
+		let expr_type = format!("{}", expr.analyze(analyzer));
+		let var_type = format!("{}", variable.analyze(analyzer));
 
 		if expr_type != var_type {
 			message::error(

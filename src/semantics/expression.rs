@@ -3,7 +3,7 @@ use crate::parser::ast::Expr::*;
 use crate::parser::ast::Expression;
 use crate::semantics::Analyzer;
 
-use super::FuncSig;
+use super::DataType;
 
 impl Expression {
 	fn check_binary_arithmetic(&self, analyzer: &Analyzer, type1: String, type2: String) {
@@ -19,7 +19,7 @@ impl Expression {
 		}
 	}
 
-	pub fn analyze(&self, analyzer: &mut Analyzer) -> String {
+	pub fn analyze(&self, analyzer: &mut Analyzer) -> DataType {
 		match &self.node {
 			Integer(value) => {
 				//Warn if the value will not fit in 2 bytes
@@ -32,7 +32,7 @@ impl Expression {
 					);
 				}
 
-				Analyzer::INT.to_string()
+				DataType::VarSig(Analyzer::INT.to_string())
 			}
 
 			Neg(expr) => {
@@ -43,10 +43,10 @@ impl Expression {
 							message::error("Value exceeds the minimum for a signed 2-byte integer (min -32768)".to_string(), Some(self.span), Some(analyzer.context));
 						}
 
-						Analyzer::INT.to_string()
+						DataType::VarSig(Analyzer::INT.to_string())
 					}
 					_ => {
-						let tp = expr.analyze(analyzer);
+						let tp = format!("{}", expr.analyze(analyzer));
 						if tp != Analyzer::INT {
 							message::error(
 								format!("Cannot perform arithmetic on type `{}`", tp),
@@ -54,35 +54,35 @@ impl Expression {
 								Some(analyzer.context),
 							);
 						}
-						Analyzer::INT.to_string()
+						DataType::VarSig(Analyzer::INT.to_string())
 					}
 				}
 			}
 
 			Add(a, b) => {
-				let type1 = a.analyze(analyzer);
-				let type2 = b.analyze(analyzer);
+				let type1 = format!("{}", a.analyze(analyzer));
+				let type2 = format!("{}", b.analyze(analyzer));
 				self.check_binary_arithmetic(analyzer, type1, type2);
-				Analyzer::INT.to_string()
+				DataType::VarSig(Analyzer::INT.to_string())
 			}
 
 			Sub(a, b) => {
-				let type1 = a.analyze(analyzer);
-				let type2 = b.analyze(analyzer);
+				let type1 = format!("{}", a.analyze(analyzer));
+				let type2 = format!("{}", b.analyze(analyzer));
 				self.check_binary_arithmetic(analyzer, type1, type2);
-				Analyzer::INT.to_string()
+				DataType::VarSig(Analyzer::INT.to_string())
 			}
 
 			Mult(a, b) => {
-				let type1 = a.analyze(analyzer);
-				let type2 = b.analyze(analyzer);
+				let type1 = format!("{}", a.analyze(analyzer));
+				let type2 = format!("{}", b.analyze(analyzer));
 				self.check_binary_arithmetic(analyzer, type1, type2);
-				Analyzer::INT.to_string()
+				DataType::VarSig(Analyzer::INT.to_string())
 			}
 
 			Div(a, b) => {
-				let type1 = a.analyze(analyzer);
-				let type2 = b.analyze(analyzer);
+				let type1 = format!("{}", a.analyze(analyzer));
+				let type2 = format!("{}", b.analyze(analyzer));
 				self.check_binary_arithmetic(analyzer, type1, type2);
 
 				match b.node {
@@ -98,12 +98,12 @@ impl Expression {
 					_ => {}
 				}
 
-				Analyzer::INT.to_string()
+				DataType::VarSig(Analyzer::INT.to_string())
 			}
 
 			Mod(a, b) => {
-				let type1 = a.analyze(analyzer);
-				let type2 = b.analyze(analyzer);
+				let type1 = format!("{}", a.analyze(analyzer));
+				let type2 = format!("{}", b.analyze(analyzer));
 				self.check_binary_arithmetic(analyzer, type1, type2);
 
 				match b.node {
@@ -119,49 +119,49 @@ impl Expression {
 					_ => {}
 				}
 
-				Analyzer::INT.to_string()
+				DataType::VarSig(Analyzer::INT.to_string())
 			}
 
 			LessThan(a, b) => {
-				let type1 = a.analyze(analyzer);
-				let type2 = b.analyze(analyzer);
+				let type1 = format!("{}", a.analyze(analyzer));
+				let type2 = format!("{}", b.analyze(analyzer));
 				self.check_binary_arithmetic(analyzer, type1, type2);
-				Analyzer::INT.to_string()
+				DataType::VarSig(Analyzer::INT.to_string())
 			}
 
 			LessOrEqual(a, b) => {
-				let type1 = a.analyze(analyzer);
-				let type2 = b.analyze(analyzer);
+				let type1 = format!("{}", a.analyze(analyzer));
+				let type2 = format!("{}", b.analyze(analyzer));
 				self.check_binary_arithmetic(analyzer, type1, type2);
-				Analyzer::INT.to_string()
+				DataType::VarSig(Analyzer::INT.to_string())
 			}
 
 			GreaterThan(a, b) => {
-				let type1 = a.analyze(analyzer);
-				let type2 = b.analyze(analyzer);
+				let type1 = format!("{}", a.analyze(analyzer));
+				let type2 = format!("{}", b.analyze(analyzer));
 				self.check_binary_arithmetic(analyzer, type1, type2);
-				Analyzer::INT.to_string()
+				DataType::VarSig(Analyzer::INT.to_string())
 			}
 
 			GreaterOrEqual(a, b) => {
-				let type1 = a.analyze(analyzer);
-				let type2 = b.analyze(analyzer);
+				let type1 = format!("{}", a.analyze(analyzer));
+				let type2 = format!("{}", b.analyze(analyzer));
 				self.check_binary_arithmetic(analyzer, type1, type2);
-				Analyzer::INT.to_string()
+				DataType::VarSig(Analyzer::INT.to_string())
 			}
 
 			Equal(a, b) => {
-				let type1 = a.analyze(analyzer);
-				let type2 = b.analyze(analyzer);
+				let type1 = format!("{}", a.analyze(analyzer));
+				let type2 = format!("{}", b.analyze(analyzer));
 				self.check_binary_arithmetic(analyzer, type1, type2);
-				Analyzer::INT.to_string()
+				DataType::VarSig(Analyzer::INT.to_string())
 			}
 
 			NotEqual(a, b) => {
-				let type1 = a.analyze(analyzer);
-				let type2 = b.analyze(analyzer);
+				let type1 = format!("{}", a.analyze(analyzer));
+				let type2 = format!("{}", b.analyze(analyzer));
 				self.check_binary_arithmetic(analyzer, type1, type2);
-				Analyzer::INT.to_string()
+				DataType::VarSig(Analyzer::INT.to_string())
 			}
 
 			FuncCall(name, params) => match &name.node {
@@ -170,39 +170,60 @@ impl Expression {
 						param.analyze(analyzer);
 					}
 
-					match analyzer.get_function(id) {
+					match analyzer.get_variable(id, true) {
 						None => {
 							message::error(
 								format!("Use of undeclared function `{}`", id),
 								Some(name.span),
 								Some(analyzer.context),
 							);
-							Analyzer::VOID.to_string()
+							DataType::VarSig(Analyzer::VOID.to_string())
 						}
 
-						Some(func) => {
-							let ct = func.param_types.len();
-							if params.len() != ct {
-								message::error(
-									format!(
-										"Expected {} argument{} to function `{}`, got {}",
-										ct,
-										if ct == 1 { "" } else { "s" },
-										id,
-										params.len()
-									),
-									Some(self.span),
-									Some(analyzer.context),
-								);
-								message::hint(
-									format!("Function signature is `{}{}`", id, func),
-									Some(self.span),
-									Some(analyzer.context),
-								);
+						Some(func) => match &func.data_type {
+							DataType::FuncSig(return_type, param_types) => {
+								let ct = param_types.len();
+								if params.len() != ct {
+									message::error(
+										format!(
+											"Expected {} argument{} to function `{}`, got {}",
+											ct,
+											if ct == 1 { "" } else { "s" },
+											id,
+											params.len()
+										),
+										Some(self.span),
+										Some(analyzer.context),
+									);
+									message::hint(
+										format!("Function signature is `{}{}`", id, func),
+										Some(self.span),
+										Some(analyzer.context),
+									);
+								}
+
+								DataType::VarSig(return_type.clone())
 							}
 
-							func.return_type.clone()
-						}
+							DataType::VarSig(value) => {
+								message::error(
+									format!("Cannot call `{}` because it is not a function", id,),
+									Some(self.span),
+									Some(analyzer.context),
+								);
+								message::context(func.span, analyzer.context);
+								message::hint(
+									format!(
+										"Variable `{}` was declared as type `{}` here",
+										id, value
+									),
+									Some(func.span),
+									Some(analyzer.context),
+								);
+
+								DataType::VarSig(Analyzer::VOID.to_string())
+							}
+						},
 					}
 				}
 
@@ -212,7 +233,7 @@ impl Expression {
 						Some(name.span),
 						Some(analyzer.context),
 					);
-					Analyzer::VOID.to_string()
+					DataType::VarSig(Analyzer::VOID.to_string())
 				}
 			},
 
@@ -223,7 +244,7 @@ impl Expression {
 						Some(self.span),
 						Some(analyzer.context),
 					);
-					Analyzer::INT.to_string()
+					DataType::VarSig(Analyzer::INT.to_string())
 				}
 				Some(var) => {
 					if !var.mutable && analyzer.flags.language_server {
@@ -234,9 +255,9 @@ impl Expression {
 						);
 					}
 
-					let ret = var.data_type.clone();
+					let return_type = var.data_type.clone();
 					analyzer.use_variable(name);
-					ret
+					return_type
 				}
 			},
 
@@ -280,12 +301,9 @@ impl Expression {
 					}
 				}
 
-				format!(
-					"{}",
-					FuncSig {
-						return_type: expr_type,
-						param_types: params.iter().map(|p| p.datatype.value.clone()).collect(),
-					}
+				DataType::FuncSig(
+					format!("{}", expr_type),
+					params.iter().map(|p| p.datatype.value.clone()).collect(),
 				)
 			}
 		}

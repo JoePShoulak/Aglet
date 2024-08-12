@@ -9,39 +9,44 @@ mod expression;
 mod program;
 mod statement;
 
-pub struct FuncSig {
-	return_type: String,
-	param_types: Vec<String>,
+#[derive(Clone)]
+pub enum DataType {
+	FuncSig(String, Vec<String>),
+	VarSig(String),
 }
 
-pub struct VarSig {
-	data_type: String,
+pub struct TypeSignature {
+	data_type: DataType,
 	mutable: bool,
 	span: Span,
 	used: i64,
 	changed: i64,
 }
 
-impl std::fmt::Display for FuncSig {
+impl std::fmt::Display for TypeSignature {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		write!(
-			f,
-			"({}) -> {}",
-			self.param_types.join(", "),
-			self.return_type
-		)
+		write!(f, "{}", self.data_type)
+	}
+}
+
+impl std::fmt::Display for DataType {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match &self {
+			DataType::FuncSig(return_type, param_types) => {
+				write!(f, "({}) -> {}", param_types.join(", "), return_type)
+			}
+			DataType::VarSig(value) => write!(f, "{}", value),
+		}
 	}
 }
 
 pub struct Scope {
-	functions: HashMap<String, FuncSig>,
-	variables: HashMap<String, VarSig>,
+	variables: HashMap<String, TypeSignature>,
 }
 
 impl Scope {
 	fn new() -> Scope {
 		Scope {
-			functions: HashMap::new(),
 			variables: HashMap::new(),
 		}
 	}
@@ -73,6 +78,7 @@ impl<'a> Analyzer<'a> {
 			&String::from("print"),
 			vec![Analyzer::INT.to_string()],
 			Analyzer::VOID,
+			Span { lo: 0, hi: 0 },
 		);
 
 		ast.analyze(&mut analyzer);
@@ -87,34 +93,32 @@ impl<'a> Analyzer<'a> {
 		self.scopes.pop().unwrap()
 	}
 
-	pub fn get_function(&self, name: &String) -> Option<&FuncSig> {
-		for scope in &self.scopes {
-			let func = scope.functions.get(name);
-			match func {
-				None => {}
-				_ => {
-					return func;
-				}
-			}
-		}
-
-		None
-	}
-
-	pub fn get_current_function(&self) -> Option<(&FuncSig, &String)> {
+	pub fn get_current_function(&self) -> Option<(&DataType, &String)> {
 		match self.func_stack.last() {
 			None => None,
-			Some(func) => Some((self.get_function(func).unwrap(), func)),
+			Some(func) => Some((&self.get_variable(func, true).unwrap().data_type, func)),
 		}
 	}
 
-	pub fn set_function(&mut self, name: &String, params: Vec<String>, return_type: &str) {
+	pub fn set_function(
+		&mut self,
+		name: &String,
+		params: Vec<String>,
+		return_type: &str,
+		span: Span,
+	) {
 		let scope = self.scopes.last_mut().unwrap();
-		scope.functions.insert(
+		scope.variables.insert(
 			name.to_string(),
-			FuncSig {
-				return_type: return_type.to_string(),
-				param_types: params,
+			TypeSignature {
+				data_type: DataType::FuncSig(return_type.to_string(), params),
+				mutable: false,
+				span: Span {
+					lo: span.lo,
+					hi: span.hi,
+				},
+				used: 0,
+				changed: 0,
 			},
 		);
 	}
@@ -123,7 +127,7 @@ impl<'a> Analyzer<'a> {
 		["int", "void"].iter().any(|&s| s == return_type)
 	}
 
-	pub fn get_variable(&self, name: &String, all_scopes: bool) -> Option<&VarSig> {
+	pub fn get_variable(&self, name: &String, all_scopes: bool) -> Option<&TypeSignature> {
 		if all_scopes {
 			for scope in &self.scopes {
 				let var = scope.variables.get(name);
@@ -144,8 +148,25 @@ impl<'a> Analyzer<'a> {
 		let scope = self.scopes.last_mut().unwrap();
 		scope.variables.insert(
 			name.to_string(),
-			VarSig {
-				data_type: data_type.to_string(),
+			TypeSignature {
+				data_type: DataType::VarSig(data_type.to_string()),
+				mutable: mutable,
+				span: Span {
+					lo: span.lo,
+					hi: span.hi,
+				},
+				used: 0,
+				changed: 0,
+			},
+		);
+	}
+
+	pub fn set_entity(&mut self, name: &String, data_type: &DataType, mutable: bool, span: Span) {
+		let scope = self.scopes.last_mut().unwrap();
+		scope.variables.insert(
+			name.to_string(),
+			TypeSignature {
+				data_type: data_type.clone(),
 				mutable: mutable,
 				span: Span {
 					lo: span.lo,
@@ -182,6 +203,6 @@ impl<'a> Analyzer<'a> {
 	}
 
 	pub fn valid_data_type(&self, data_type: &String) -> bool {
-		["int"].iter().any(|&s| s == data_type)
+		["void"].iter().any(|&s| s != data_type)
 	}
 }

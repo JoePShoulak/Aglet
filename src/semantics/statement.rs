@@ -1,17 +1,18 @@
+use super::Analyzer;
+use super::DataType;
 use crate::message;
 use crate::parser::ast::Expr::*;
 use crate::parser::ast::Expression;
 use crate::parser::ast::Qualifier::*;
 use crate::parser::ast::Statement;
 use crate::parser::ast::Stmt::*;
-use crate::semantics::Analyzer;
 
 impl Statement {
 	fn hint_function_signature(&self, expr: &Expression, analyzer: &Analyzer) {
 		//If the expression is a function, try to print a hint about its signature.
 		match &expr.node {
 			FuncCall(name, _) => match &name.node {
-				Var(id) => match analyzer.get_function(id) {
+				Var(id) => match analyzer.get_variable(id, true) {
 					None => {}
 					Some(func) => {
 						message::hint(
@@ -57,7 +58,7 @@ impl Statement {
 			}
 
 			FuncDecl(name, params, return_type, body) => {
-				match analyzer.get_function(&name.value) {
+				match analyzer.get_variable(&name.value, true) {
 					Some(_) => {
 						message::error(
 							format!("Redeclaration of function `{}`", name.value),
@@ -67,7 +68,12 @@ impl Statement {
 					}
 					None => {
 						let params = params.iter().map(|s| s.datatype.value.clone()).collect();
-						analyzer.set_function(&name.value, params, &return_type.value.clone());
+						analyzer.set_function(
+							&name.value,
+							params,
+							&return_type.value.clone(),
+							self.span,
+						);
 					}
 				}
 
@@ -215,7 +221,7 @@ impl Statement {
 					None => {
 						//Deduce the type from the expression.
 
-						if !analyzer.valid_data_type(&deduced_type) {
+						if !analyzer.valid_data_type(&format!("{}", deduced_type)) {
 							message::error(
 								format!(
 									"Cannot assign `{}` value to variable `{}`: invalid data type",
@@ -226,7 +232,7 @@ impl Statement {
 							);
 							self.hint_function_signature(value, analyzer);
 						}
-						analyzer.set_variable(&name.value, &deduced_type, mutable, name.span);
+						analyzer.set_entity(&name.value, &deduced_type, mutable, name.span);
 					}
 					Some(ref data_type) => {
 						if !analyzer.valid_data_type(&data_type.value) {
@@ -239,7 +245,7 @@ impl Statement {
 								Some(data_type.span),
 								Some(analyzer.context),
 							);
-						} else if deduced_type != data_type.value {
+						} else if format!("{}", deduced_type) != data_type.value {
 							message::error(format!("Cannot assign `{}` value to variable `{}` of type `{}`: incompatible types", deduced_type, name.value, data_type.value), Some(value.span), Some(analyzer.context));
 							self.hint_function_signature(value, analyzer);
 						}
@@ -252,10 +258,14 @@ impl Statement {
 			ReturnStmt(expr) => {
 				//At this point, we know that return statements will be inside a function.
 				let (func, name) = analyzer.get_current_function().unwrap();
+				let return_type = match func {
+					DataType::FuncSig(return_type, _) => return_type,
+					DataType::VarSig(value) => value,
+				};
 
 				match **expr {
 					None => {
-						if func.return_type != Analyzer::VOID {
+						if return_type != Analyzer::VOID {
 							message::error(
 								format!("Return statement must have a value"),
 								Some(self.span),
@@ -269,7 +279,7 @@ impl Statement {
 						}
 					}
 					Some(ref expr) => {
-						if func.return_type == Analyzer::VOID {
+						if return_type == Analyzer::VOID {
 							message::error(
 								format!("Return statement cannot have a value"),
 								Some(expr.span),
@@ -281,7 +291,7 @@ impl Statement {
 								Some(analyzer.context),
 							);
 						} else {
-							let expr_type = expr.analyze(analyzer);
+							let expr_type = format!("{}", expr.analyze(analyzer));
 							if expr_type == Analyzer::VOID {
 								message::error(
 									"Expression does not return a value".to_string(),
@@ -298,7 +308,7 @@ impl Statement {
 			}
 
 			IfStmt(condition, stmts_true, stmts_false) => {
-				let expr_type = condition.analyze(analyzer);
+				let expr_type = format!("{}", condition.analyze(analyzer));
 				if expr_type == Analyzer::VOID {
 					message::error(
 						"Expression does not return a value".to_string(),
@@ -319,7 +329,7 @@ impl Statement {
 			}
 
 			WhileStmt(condition, stmts) => {
-				let expr_type = condition.analyze(analyzer);
+				let expr_type = format!("{}", condition.analyze(analyzer));
 				if expr_type == Analyzer::VOID {
 					message::error(
 						"Expression does not return a value".to_string(),
