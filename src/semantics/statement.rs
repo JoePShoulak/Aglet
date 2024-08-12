@@ -31,15 +31,7 @@ impl Statement {
 	pub fn analyze(&self, analyzer: &mut Analyzer) -> bool {
 		//Make sure everything is in the correct scope
 		match &self.node {
-			FuncDecl(_, _, _, _) => {
-				if analyzer.func_stack.len() > 0 {
-					message::error(
-						"Functions cannot be declared inside other functions".to_string(),
-						Some(self.span),
-						Some(analyzer.context),
-					);
-				}
-			}
+			FuncDecl(_, _, _, _) => {}
 			_ => {
 				if analyzer.func_stack.len() == 0 {
 					message::error(
