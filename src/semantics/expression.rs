@@ -170,7 +170,7 @@ impl Expression {
 						param.analyze(analyzer);
 					}
 
-					match analyzer.get_variable(id, true) {
+					let return_type = match analyzer.get_variable(id, true) {
 						None => {
 							message::error(
 								format!("Use of undeclared function `{}`", id),
@@ -224,7 +224,10 @@ impl Expression {
 								DataType::VarSig(Analyzer::VOID.to_string())
 							}
 						},
-					}
+					};
+
+					analyzer.use_variable(id);
+					return_type
 				}
 
 				_ => {

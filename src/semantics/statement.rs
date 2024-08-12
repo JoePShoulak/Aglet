@@ -290,9 +290,10 @@ impl Statement {
 								Some(expr.span),
 								Some(analyzer.context),
 							);
+							expr.analyze(analyzer);
 						} else {
-							let expr_type = format!("{}", expr.analyze(analyzer));
-							if expr_type == Analyzer::VOID {
+							let expr_type = expr.analyze(analyzer);
+							if format!("{}", expr_type) == Analyzer::VOID {
 								message::error(
 									"Expression does not return a value".to_string(),
 									Some(expr.span),
